@@ -3,59 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="15-418 final project: a workload- and memory-aware task runtime for the PSoC 6’s heterogeneous Cortex-M4 and Cortex-M0+ cores.">
-  <title>Heterogeneous MCU Scheduling · 15-418</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>15-418 Project: Heterogeneous MCU Scheduler</title>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header wrap">
-    <a class="wordmark" href="./" aria-label="Project home"><span class="mark" aria-hidden="true">↗</span> MCU SCHEDULING</a>
-    <nav aria-label="Main navigation"><a href="./" aria-current="page">Overview</a><a href="proposal.html">Proposal</a><a href="https://github.com/jasontxfei/15418-mcu-scheduler">GitHub <span aria-hidden="true">↗</span></a></nav>
-  </header>
-  <main id="main" class="wrap">
-    <section class="hero" aria-labelledby="project-title">
-      <div class="hero-copy">
-        <p class="eyebrow">Carnegie Mellon University · 15-418 · Fall 2026</p>
-        <h1 id="project-title">Workload- and memory-aware scheduler for <em>heterogeneous MCU cores.</em></h1>
-        <p class="intro">Build a lightweight task-runtime library for the PSoC 6’s Cortex-M4 and Cortex-M0+ cores, comparing runtime and costs of weighted static assignment, work stealing, and cost-aware scheduling.</p>
-        <p class="authors"><a href="https://github.com/jasontxfei">Jason Tang</a><span aria-hidden="true"> / </span><a href="https://github.com/catheri5">Catherine Li</a></p>
-        <a class="button" href="proposal.html">Read the proposal <span aria-hidden="true">↗</span></a>
-      </div>
-      <figure class="system-figure" aria-labelledby="system-caption">
-        <div class="figure-top"><span>PSoC 6</span><span>DUAL-CORE SYSTEM</span></div>
-        <div class="task-input">Operations · Buffers · Dependencies</div>
-        <div class="connector" aria-hidden="true">↓</div>
-        <div class="runtime-node">Task runtime</div>
-        <div class="core-connectors" aria-hidden="true"><span>↓</span><span>↓</span></div>
-        <div class="cores"><div class="core core-m4"><span>01</span><strong>Cortex-M4</strong></div><div class="core core-m0"><span>02</span><strong>Cortex-M0+</strong></div></div>
-        <div class="memory-node">Shared SRAM</div>
-        <figcaption id="system-caption">Runtime and platform overview · proposed system</figcaption>
-      </figure>
-    </section>
-    <section class="project-question" aria-labelledby="question-heading">
-      <p class="eyebrow" id="question-heading">The question</p>
-      <p>Investigate when dynamic balancing outperforms a tuned static schedule.</p>
-    </section>
-    <section class="reports section-space" aria-labelledby="reports-heading">
-      <div class="section-heading"><h2 id="reports-heading">Project reports</h2><span class="eyebrow">01 — Documentation</span></div>
-      <a class="report-row report-link" href="proposal.html"><div><span class="report-number">01</span><h3>Project proposal</h3></div><div><time datetime="2026-11-09">Nov 09, 2026</time><span class="status draft">Draft</span><span aria-hidden="true">↗</span></div></a>
-      <div class="report-row"><div><span class="report-number">02</span><h3>Milestone report</h3></div><div><time datetime="2026-11-23">Nov 23, 2026</time><span class="status">Upcoming</span></div></div>
-      <div class="report-row"><div><span class="report-number">03</span><h3>Final report</h3></div><div><time datetime="2026-12-10">Dec 10, 2026</time><span class="status">Upcoming</span></div></div>
-      <p class="small muted">Dates are course deadlines. Reports will be linked here as they become available.</p>
-    </section>
-    <section class="section-space" aria-labelledby="schedule-heading">
-      <div class="section-heading"><h2 id="schedule-heading">Project schedule</h2><span class="eyebrow">02 — Weekly plan</span></div>
-      <p class="draft-note">Weekly tasks and owners still need to be filled in by the team.</p>
-      <div class="table-scroll"><table><caption class="visually-hidden">Weekly project schedule, pending team input</caption><thead><tr><th scope="col">Week</th><th scope="col">Planned work</th><th scope="col">Checkpoint</th></tr></thead><tbody>
-        <tr><th scope="row">Nov 09–15</th><td>To be added</td><td>Proposal · Nov 09</td></tr>
-        <tr><th scope="row">Nov 16–22</th><td>To be added</td><td>—</td></tr>
-        <tr><th scope="row">Nov 23–29</th><td>To be added</td><td>Milestone · Nov 23</td></tr>
-        <tr><th scope="row">Nov 30–Dec 06</th><td>To be added</td><td>—</td></tr>
-        <tr><th scope="row">Dec 07–11</th><td>To be added</td><td>Final report · Dec 10; poster · Dec 11</td></tr>
-      </tbody></table></div>
-    </section>
-  </main>
-  <footer class="site-footer wrap"><span>Jason Tang &amp; Catherine Li · 15-418</span><a href="https://www.cs.cmu.edu/~418/projects/project-proposal.pdf">Course project handout <span aria-hidden="true">↗</span></a></footer>
+  <h1>Workload- and memory-aware scheduler for heterogeneous MCU cores</h1>
+  <p>Jason Tang and Catherine Li<br>15-418, Fall 2026</p>
+  <h2>Reports</h2>
+  <ul>
+    <li><a href="proposal.html">Project proposal</a> (draft)</li>
+    <li>Milestone report: forthcoming</li>
+    <li>Final report: forthcoming</li>
+  </ul>
+  <p><a href="https://github.com/jasontxfei/15418-mcu-scheduler">GitHub repository</a></p>
+  <h2>Schedule</h2>
+  <p>Weekly tasks and owners still need to be added by the team.</p>
+  <ul>
+    <li>November 9–15: to be added. Proposal due November 9.</li>
+    <li>November 16–22: to be added.</li>
+    <li>November 23–29: to be added. Milestone due November 23.</li>
+    <li>November 30–December 6: to be added.</li>
+    <li>December 7–11: to be added. Final report due December 10; poster session December 11.</li>
+  </ul>
 </body>
 </html>
