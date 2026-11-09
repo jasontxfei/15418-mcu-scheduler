@@ -3,43 +3,46 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Project proposal by Jason Tang and Catherine Li for CMU 15-418, Fall 2026.">
-  <title>Project proposal · Heterogeneous MCU Scheduling</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Project Proposal: Heterogeneous MCU Scheduler</title>
 </head>
-<body class="proposal-page">
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header wrap">
-    <a class="wordmark" href="./" aria-label="Project home"><span class="mark" aria-hidden="true">↗</span> MCU SCHEDULING</a>
-    <nav aria-label="Main navigation"><a href="./">Overview</a><a href="proposal.html" aria-current="page">Proposal</a><a href="https://github.com/jasontxfei/15418-mcu-scheduler">GitHub <span aria-hidden="true">↗</span></a></nav>
-  </header>
-  <main id="main" class="wrap">
-    <div class="proposal-heading">
-      <p class="eyebrow">15-418 · Fall 2026 · Project proposal</p>
-      <h1>Workload- and memory-aware scheduler for <em>heterogeneous MCU cores</em></h1>
-      <p class="authors"><a href="https://github.com/jasontxfei">Jason Tang</a><span aria-hidden="true"> / </span><a href="https://github.com/catheri5">Catherine Li</a></p>
-      <p class="small">November 9, 2026 · <a class="project-url" href="https://jasontxfei.github.io/15418-mcu-scheduler/">https://jasontxfei.github.io/15418-mcu-scheduler/</a></p>
-      <div class="proposal-tools"><span class="status draft">Draft · schedule pending</span><button class="print-button" type="button" onclick="window.print()">Print / Save as PDF <span aria-hidden="true">↗</span></button></div>
-    </div>
-    <div class="proposal-layout">
-      <aside class="toc" aria-label="Proposal contents"><p class="eyebrow">In this proposal</p><nav><a href="#summary">01 &nbsp; Summary</a><a href="#background">02 &nbsp; Background</a><a href="#challenge">03 &nbsp; The challenge</a><a href="#resources">04 &nbsp; Resources</a><a href="#goals">05 &nbsp; Goals &amp; deliverables</a><a href="#platform">06 &nbsp; Platform choice</a><a href="#schedule">07 &nbsp; Schedule</a></nav></aside>
-      <article class="proposal-content">
-        <section id="summary"><p class="eyebrow">01</p><h2>Summary</h2><p>Build a lightweight task-runtime library for the PSoC 6’s Cortex-M4 and Cortex-M0+ cores, comparing runtime and costs of weighted static assignment, work stealing, and cost-aware scheduling. An initial profiling phase estimates per-core execution and communication costs, and the scheduler combines these estimates with core availability, core capabilities, and task dependencies to decide how to distribute tasks.</p></section>
-        <section id="background"><p class="eyebrow">02</p><h2>Background</h2><p>Applications submit registered operations, input buffers, sizes, and dependencies. Benchmarks include controlled task graphs and representative signal- or image-processing workloads.</p><p class="draft-note">Draft note: benchmark selection is tentative.</p></section>
-        <section id="challenge"><p class="eyebrow">03</p><h2>The challenge</h2><p>Unequal core capabilities, shared-memory contention, dependencies, and dispatch overhead. Investigate when dynamic balancing outperforms a tuned static schedule.</p></section>
-        <section id="resources"><p class="eyebrow">04</p><h2>Resources</h2><p>Dual-core PSoC 6, C/C++, Infineon IPC examples (these are the primitives they provide for safe cross-core memory accesses), and hardware timers. We implement the runtime ourselves.</p></section>
-        <section id="goals"><p class="eyebrow">05</p><h2>Goals and deliverables</h2><div class="goal"><h3>Plan to achieve</h3><p>Implement the three policies and measure correctness, execution time, idle time, and memory usage against M4-only and weighted static baselines.</p></div><div class="goal"><h3>Hope to achieve</h3><p>Extend to two boards over SPI or UART and investigate remote assignment and batching. This adds the complexity of considering very low bandwidth wired communication bottlenecks.</p></div><div class="goal"><h3>Fallback</h3><p>Independent jobs with fixed calibration before dependency graphs.</p></div></section>
-        <section id="platform"><p class="eyebrow">06</p><h2>Platform choice</h2><p>Unequal cores, shared SRAM, and constrained memory in a platform where firmware directly manages inter-core coordination. This lets us study whether scheduling mechanisms remain worthwhile when their overhead consumes a meaningful fraction of the available processing and memory resources.</p></section>
-        <section id="schedule"><p class="eyebrow">07</p><h2>Schedule</h2><p class="draft-note">To complete: add at least one task per week, including task owners and expected deliverables. Account for other coursework and update the schedule as work progresses.</p><div class="table-scroll"><table><caption class="visually-hidden">Weekly project schedule, pending team input</caption><thead><tr><th scope="col">Week</th><th scope="col">Tasks / owner</th><th scope="col">Course deadline</th></tr></thead><tbody>
-          <tr><th scope="row">Nov 09–15</th><td>To be added</td><td>Proposal · Nov 09</td></tr>
-          <tr><th scope="row">Nov 16–22</th><td>To be added</td><td>—</td></tr>
-          <tr><th scope="row">Nov 23–29</th><td>To be added</td><td>Milestone · Nov 23</td></tr>
-          <tr><th scope="row">Nov 30–Dec 06</th><td>To be added</td><td>—</td></tr>
-          <tr><th scope="row">Dec 07–11</th><td>To be added</td><td>Final report · Dec 10; poster · Dec 11</td></tr>
-        </tbody></table></div></section>
-      </article>
-    </div>
-  </main>
-  <footer class="site-footer wrap"><a href="./">← Project overview</a><a href="https://www.cs.cmu.edu/~418/projects/project-proposal.pdf">Course project handout <span aria-hidden="true">↗</span></a></footer>
+<body>
+  <p><a href="./">Project homepage</a></p>
+  <h1>Workload- and memory-aware scheduler for heterogeneous MCU cores</h1>
+  <p>Jason Tang and Catherine Li<br>15-418, Fall 2026<br>November 9, 2026</p>
+  <p>Project URL: <a href="https://jasontxfei.github.io/15418-mcu-scheduler/">https://jasontxfei.github.io/15418-mcu-scheduler/</a></p>
+  <p><strong>Draft: weekly schedule still needs to be completed.</strong></p>
+
+  <h2>Summary</h2>
+  <p>Build a lightweight task-runtime library for the PSoC 6’s Cortex-M4 and Cortex-M0+ cores, comparing runtime and costs of weighted static assignment, work stealing, and cost-aware scheduling. An initial profiling phase estimates per-core execution and communication costs, and the scheduler combines these estimates with core availability, core capabilities, and task dependencies to decide how to distribute tasks.</p>
+
+  <h2>Background</h2>
+  <p>Applications submit registered operations, input buffers, sizes, and dependencies. Benchmarks include controlled task graphs and representative signal- or image-processing workloads.</p>
+  <p><em>Benchmark selection is tentative.</em></p>
+
+  <h2>The challenge</h2>
+  <p>Unequal core capabilities, shared-memory contention, dependencies, and dispatch overhead. Investigate when dynamic balancing outperforms a tuned static schedule.</p>
+
+  <h2>Resources</h2>
+  <p>Dual-core PSoC 6, C/C++, Infineon IPC examples (these are the primitives they provide for safe cross-core memory accesses), and hardware timers. We implement the runtime ourselves.</p>
+
+  <h2>Goals and deliverables</h2>
+  <ul>
+    <li><strong>Plan:</strong> Implement the three policies and measure correctness, execution time, idle time, and memory usage against M4-only and weighted static baselines.</li>
+    <li><strong>Stretch:</strong> Extend to two boards over SPI or UART and investigate remote assignment and batching. This adds the complexity of considering very low bandwidth wired communication bottlenecks.</li>
+    <li><strong>Fallback:</strong> Independent jobs with fixed calibration before dependency graphs.</li>
+  </ul>
+
+  <h2>Platform choice</h2>
+  <p>Unequal cores, shared SRAM, and constrained memory in a platform where firmware directly manages inter-core coordination. This lets us study whether scheduling mechanisms remain worthwhile when their overhead consumes a meaningful fraction of the available processing and memory resources.</p>
+
+  <h2>Schedule</h2>
+  <p>To complete: add weekly tasks, owners, and expected deliverables.</p>
+  <ul>
+    <li>November 9–15: to be added. Proposal due November 9.</li>
+    <li>November 16–22: to be added.</li>
+    <li>November 23–29: to be added. Milestone due November 23.</li>
+    <li>November 30–December 6: to be added.</li>
+    <li>December 7–11: to be added. Final report due December 10; poster session December 11.</li>
+  </ul>
 </body>
 </html>
