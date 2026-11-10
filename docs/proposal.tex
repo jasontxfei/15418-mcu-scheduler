@@ -3,7 +3,12 @@
 \usepackage[margin=1in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{xcolor}
-\usepackage[hidelinks]{hyperref}
+\usepackage[
+    colorlinks=true,
+    urlcolor=blue,
+    linkcolor=blue,
+    citecolor=blue
+]{hyperref}
 \usepackage{tabularx}
 \usepackage{booktabs}
 \usepackage{float}
@@ -20,7 +25,7 @@ for Heterogeneous Embedded MCU Cores}
 \begin{document}
 \maketitle
 
-\noindent\textbf{Project URL:} \TODO{Add the project homepage URL.}
+\noindent\textbf{Project URL:} \href{https://jasontxfei.github.io/15418-mcu-scheduler/}{https://jasontxfei.github.io/15418-mcu-scheduler/}
 
 \section{Summary}
 % Keep the summary to no more than 2--3 sentences.
@@ -113,14 +118,13 @@ implement the scheduling runtime ourselves.
 
 For programming background, we will consult Infineon's getting-started
 guide for PSoC 6 on ModusToolbox, its general code-example collection,
-and Cypress's introductory PSoC 6 101 video series
-\cite{psoc-start,psoc-examples,psoc101}. Specific peripheral and IPC
+and \href{https://youtube.com/playlist?list=PLIOkqhZiy83H81AhLcjwIKkB9w07JQZS6&si=GrjLfIfy3ogX0vyl}{Cypress's introductory PSoC 6 101 video series}. Specific peripheral and IPC
 examples will be selected during implementation.
 
 For scheduling, we will consult Blumofe and Leiserson's work-stealing
-paper for dynamic load balancing, and Topcuoglu et al.'s HEFT paper
+paper for dynamic load balancing, and \href{https://doi.org/10.1109/71.993206}{Topcuoglu et al.'s HEFT paper}
 for cost-based assignment of dependent tasks to heterogeneous
-processors \cite{work-stealing,heft}. These will serve as algorithmic
+processors. These will serve as algorithmic
 references rather than commitments to reproduce the complete systems.
 
 \section{Goals and Deliverables}
