@@ -3,26 +3,78 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>15-418 Project: Heterogeneous MCU Scheduler</title>
+  <title>15-418 Project: Heterogeneous Embedded MCU Scheduler</title>
 </head>
 <body>
-  <h1>Workload- and memory-aware scheduler for heterogeneous MCU cores</h1>
-  <p>Jason Tang and Catherine Li<br>15-418, Fall 2026</p>
+  <h1>Workload- and Memory-Aware Scheduler for Heterogeneous Embedded MCU Cores</h1>
+  <p>Jason Tang (jasont2) and Catherine Li (catheri5)<br>15-418, Fall 2026</p>
   <h2>Reports</h2>
   <ul>
-    <li><a href="proposal.html">Project proposal</a> (draft)</li>
+    <li>Project proposal: <a href="proposal.html">HTML</a> | <a href="proposal.pdf">PDF</a></li>
     <li>Milestone report: forthcoming</li>
     <li>Final report: forthcoming</li>
   </ul>
   <p><a href="https://github.com/jasontxfei/15418-mcu-scheduler">GitHub repository</a></p>
   <h2>Schedule</h2>
-  <p>Weekly tasks and owners still need to be added by the team.</p>
-  <ul>
-    <li>November 9–15: to be added. Proposal due November 9.</li>
-    <li>November 16–22: to be added.</li>
-    <li>November 23–29: to be added. Milestone due November 23.</li>
-    <li>November 30–December 6: to be added.</li>
-    <li>December 7–11: to be added. Final report due December 10; poster session December 11.</li>
-  </ul>
+<table>
+<thead>
+<tr>
+<th scope="col"><strong>Date</strong></th>
+<th scope="col"><strong>Deliverable</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nov. 9–15</td>
+<td>Set up both cores; establish M4-only
+benchmarks and initial per-core timing measurements.</td>
+</tr>
+<tr>
+<td>Nov. 16–22</td>
+<td>Implement shared-memory queues,
+completion/dependency tracking, and equal and weighted static
+assignment.</td>
+</tr>
+<tr>
+<td>Nov. 23</td>
+<td>Submit milestone report with preliminary
+measurements and an updated schedule.</td>
+</tr>
+<tr>
+<td>Nov. 23–29</td>
+<td>Implement ordinary and cost-aware work
+stealing; validate correctness across policies.</td>
+</tr>
+<tr>
+<td>Nov. 30–Dec. 6</td>
+<td>Evaluate task sizes, computation
+intensity, memory budgets, and arrival jitter; profile and optimize
+bottlenecks.</td>
+</tr>
+<tr>
+<td>Dec. 7–10</td>
+<td>Complete experiments, figures, and final
+report. Submit the final report by Dec. 10.</td>
+</tr>
+<tr>
+<td>Dec. 11</td>
+<td>Present the project and evaluation at the
+poster session.</td>
+</tr>
+</tbody>
+</table>
+
+<p><em>Stretch work: If core deliverables are complete, investigate
+two-board communication and batched remote job assignment.</em></p>
+
+<p><strong>Key deadlines from the proposal guidelines:</strong></p>
+
+<ul>
+<li><p>Proposal: November 9, 2026, 11:59 p.m.</p></li>
+<li><p>Milestone report: November 23, 2026, 11:59 p.m.</p></li>
+<li><p>Final report: December 10, 2026, 11:59 p.m.</p></li>
+<li><p>Poster session: December 11, 2026.</p></li>
+</ul>
+
 </body>
 </html>

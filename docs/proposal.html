@@ -3,46 +3,305 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Project Proposal: Heterogeneous MCU Scheduler</title>
+  <title>Project Proposal: Heterogeneous Embedded MCU Scheduler</title>
 </head>
 <body>
-  <p><a href="./">Project homepage</a></p>
-  <h1>Workload- and memory-aware scheduler for heterogeneous MCU cores</h1>
-  <p>Jason Tang and Catherine Li<br>15-418, Fall 2026<br>November 9, 2026</p>
-  <p>Project URL: <a href="https://jasontxfei.github.io/15418-mcu-scheduler/">https://jasontxfei.github.io/15418-mcu-scheduler/</a></p>
-  <p><strong>Draft: weekly schedule still needs to be completed.</strong></p>
+  <p><a href="./">Project homepage</a> | <a href="proposal.pdf">Proposal PDF</a></p>
+  <h1>Workload- and Memory-Aware Scheduler for Heterogeneous Embedded MCU Cores</h1>
+  <p>Jason Tang (jasont2) and Catherine Li (catheri5)<br>15-418, Fall 2026<br>November 9, 2026</p>
+<p><strong>Project URL:</strong> <a href="https://jasontxfei.github.io/15418-mcu-scheduler/">https://jasontxfei.github.io/15418-mcu-scheduler/</a></p>
 
-  <h2>Summary</h2>
-  <p>Build a lightweight task-runtime library for the PSoC 6’s Cortex-M4 and Cortex-M0+ cores, comparing runtime and costs of weighted static assignment, work stealing, and cost-aware scheduling. An initial profiling phase estimates per-core execution and communication costs, and the scheduler combines these estimates with core availability, core capabilities, and task dependencies to decide how to distribute tasks.</p>
+<h2 id="summary">Summary</h2>
 
-  <h2>Background</h2>
-  <p>Applications submit registered operations, input buffers, sizes, and dependencies. Benchmarks include controlled task graphs and representative signal- or image-processing workloads.</p>
-  <p><em>Benchmark selection is tentative.</em></p>
+<p>We plan to build a lightweight task-runtime library for the PSoC 6
+family of multi-core embedded microcontrollers, initially targeting the
+CY8CPROTO-063-BLE board, comparing runtime and costs of weighted static
+assignment, work stealing, and cost-aware scheduling. We will implement
+an initial profiling phase estimating per-core execution and
+communication costs, and the scheduler combines these estimates with
+core availability, core capabilities, and task dependencies to decide
+how to distribute tasks.</p>
 
-  <h2>The challenge</h2>
-  <p>Unequal core capabilities, shared-memory contention, dependencies, and dispatch overhead. Investigate when dynamic balancing outperforms a tuned static schedule.</p>
+<h2 id="background">Background</h2>
 
-  <h2>Resources</h2>
-  <p>Dual-core PSoC 6, C/C++, Infineon IPC examples (these are the primitives they provide for safe cross-core memory accesses), and hardware timers. We implement the runtime ourselves.</p>
+<p>Heterogeneous embedded microcontrollers combine processors with
+different capabilities in a shared-memory system. The dual-core PSoC 6
+contains a Cortex-M4 and Cortex-M0+ that can execute separate firmware
+while accessing shared SRAM and peripherals. Its builtin inter-processor
+communication (IPC) hardware provides locking and notification
+mechanisms for coordinating the cores. A common design approach assigns
+each core a fixed role (e.g. using one core for data acquisition and
+communication with sensors and the other for computation and
+processing). The manual assignment offers predictable behavior and low
+scheduling overhead, but may leave a core idle when task costs or input
+rates vary. Because the cores have different capabilities, a balanced
+assignment also depends on the particular operations being executed
+rather than simply halving the number of jobs.</p>
 
-  <h2>Goals and deliverables</h2>
-  <ul>
-    <li><strong>Plan:</strong> Implement the three policies and measure correctness, execution time, idle time, and memory usage against M4-only and weighted static baselines.</li>
-    <li><strong>Stretch:</strong> Extend to two boards over SPI or UART and investigate remote assignment and batching. This adds the complexity of considering very low bandwidth wired communication bottlenecks.</li>
-    <li><strong>Fallback:</strong> Independent jobs with fixed calibration before dependency graphs.</li>
-  </ul>
+<p>Our runtime will represent application work as jobs with explicit
+dependencies. The application registers supported operations and submits
+an op identifier, input and output buffers, input sizes, and predecessor
+jobs. Each core executes its locally compiled implementation of the
+registered operation. Once a job’s dependencies have been completed, the
+runtime assigns ready jobs according to one of the following
+policies:</p>
 
-  <h2>Platform choice</h2>
-  <p>Unequal cores, shared SRAM, and constrained memory in a platform where firmware directly manages inter-core coordination. This lets us study whether scheduling mechanisms remain worthwhile when their overhead consumes a meaningful fraction of the available processing and memory resources.</p>
+<div id="tab:policies">
+<table>
+<caption>Table 1: Scheduling policies evaluated by the runtime.</caption>
+<thead>
+<tr>
+<th scope="col"><strong>Policy</strong></th>
+<th scope="col"><strong>Assignment strategy</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Equal static assignment</td>
+<td>Assign equal number of jobs to each core
+regardless of each job’s specific execution time</td>
+</tr>
+<tr>
+<td>Weighted static assignment</td>
+<td>Assign jobs before execution using initial
+profiling measurements, determining a fixed allocation before
+execution</td>
+</tr>
+<tr>
+<td>Work stealing</td>
+<td>Allow an idle core to take unstarted,
+ready jobs from the other core’s task queue.</td>
+</tr>
+<tr>
+<td>Cost-aware work stealing (extension of
+work stealing)</td>
+<td>Estimate execution and coordination costs,
+and redistribute job to available core only if estimated completion time
+improves.</td>
+</tr>
+</tbody>
+</table>
+</div>
 
-  <h2>Schedule</h2>
-  <p>To complete: add weekly tasks, owners, and expected deliverables.</p>
-  <ul>
-    <li>November 9–15: to be added. Proposal due November 9.</li>
-    <li>November 16–22: to be added.</li>
-    <li>November 23–29: to be added. Milestone due November 23.</li>
-    <li>November 30–December 6: to be added.</li>
-    <li>December 7–11: to be added. Final report due December 10; poster session December 11.</li>
-  </ul>
+<p>We will evaluate the runtime using controlled task graphs and a
+multichannel FIR-filtering workload. Generated sample blocks allow us to
+vary task size, filter length, dependency structure, and memory traffic
+(by playing with knobs such as samples per job, number of
+channels/parallel inputs, number of taps in the filter) while checking
+results against a serial reference.</p>
+
+<h2 id="the-challenge">The Challenge</h2>
+
+<p>Embedded workloads typically vary in available parallelism, with
+different computation amounts, memory traffic, and variable
+input-arrival timing (jitter). These are all factors that will affect
+the benefit of dynamic scheduling (or lack thereof) over a tuned static
+assignment.</p>
+
+<h3 id="workload">Workload</h3>
+
+<ul>
+<li><p><strong>Granularity and Memory Traffic:</strong> Small jobs may
+not justify dispatch and synchronization overhead. Filtering and
+synthetic jobs will vary computation per sample, buffer traffic, and job
+size.</p></li>
+<li><p><strong>Dependencies:</strong> Separate input channels can
+execute processing independently, while jobs sharing filter state (e.g.
+successive blocks from the same channel keeping a running average) must
+preserve ordering. Dependency chains restrict the number of jobs that
+can run concurrently.</p></li>
+<li><p><strong>Arrival Rate and Jitter:</strong> Even with periodic
+sampling, buffering and interrupt-service delays can make sample blocks
+available irregularly. Bursts increase queue occupancy and latency,
+while gaps may leave workers idle.</p></li>
+</ul>
+
+<h3 id="constraints">Constraints</h3>
+
+<p>The M4 and M0+ have unequal processing capabilities but share SRAM
+and interconnect resources. Concurrent execution may therefore introduce
+contention, while queues, buffers, and dependency metadata compete for
+limited RAM (288 KB on the CY8CPROTO-063-BLE). We will reserve a
+configurable shared-memory budget for runtime queues and dependency
+metadata rather than assuming all on-chip RAM is available; application
+buffers and per-core stacks must also fit within the overall memory
+allocation. Processing must also keep pace with incoming blocks to avoid
+buffer exhaustion. Our multi-board stretch goal would also add SPI or
+UART transfer and synchronization costs, as they have low communication
+bandwidth.</p>
+
+<h3 id="cost-model">Cost Model</h3>
+
+<p>Initial profiling will estimate per-core execution and coordination
+costs for each operation and input size. Contention and changing core
+availability can reduce prediction accuracy, making the best assignment
+difficult to determine from isolated measurements.</p>
+
+<h3 id="scheduling-algorithm">Scheduling Algorithm</h3>
+
+<p>Weighted static assignment minimizes runtime decision overhead but
+cannot correct unexpected imbalance. Ordinary work stealing
+redistributes ready jobs, while cost-aware stealing additionally
+considers predicted completion times. We will need to come up with the
+algorithms for deciding how much weight to assign each factor (core
+availability, execution cost, etc.) as well as for estimating completion
+times. We will also evaluate whether improved placement justifies the
+additional scheduling cost.</p>
+
+<h2 id="resources">Resources</h2>
+
+<p>We will use the CY8CPROTO-063-BLE dual-core PSoC 6 board, C/C++, and
+hardware timers for profiling. Infineon’s board support package provides
+board initialization support <a href="#ref-psoc-board">[3]</a>. We will implement the scheduling
+runtime ourselves.</p>
+
+<p>For programming background, we will consult Infineon’s
+getting-started guide for PSoC 6 on ModusToolbox, its general
+code-example collection, and <a href="https://youtube.com/playlist?list=PLIOkqhZiy83H81AhLcjwIKkB9w07JQZS6&amp;si=GrjLfIfy3ogX0vyl">Cypress’s
+introductory PSoC 6 101 video series</a>. Specific peripheral and IPC
+examples will be selected during implementation.</p>
+
+<p>For scheduling, we will consult Blumofe and Leiserson’s work-stealing
+paper for dynamic load balancing, and <a href="https://doi.org/10.1109/71.993206">Topcuoglu et al.’s HEFT
+paper</a> for cost-based assignment of dependent tasks to heterogeneous
+processors. These will serve as algorithmic references rather than
+commitments to reproduce the complete systems.</p>
+
+<h2 id="goals-and-deliverables">Goals and Deliverables</h2>
+
+<h3 id="plan-to-achieve">Plan to Achieve</h3>
+
+<ul>
+<li><p><strong>Runtime:</strong> Implement the policies in Table <a href="#tab:policies">1</a>, shared-memory queues, completion
+tracking, and task dependencies.</p></li>
+<li><p><strong>Profiling:</strong> Measure per-core operation costs and
+coordination overhead to guide weighted static and cost-aware
+assignment.</p></li>
+<li><p><strong>Benchmarks:</strong> Use multichannel filtering and
+synthetic task graphs to vary job size, computational intensity,
+dependencies, imbalance, input arrival rates/jitter, and queue/buffer
+capacity.</p></li>
+<li><p><strong>Evaluation:</strong> Validate outputs against a serial
+reference and check job completion and dependency ordering. Measure
+execution time, throughput, idle time, scheduling overhead, memory
+usage, and streaming latency.</p></li>
+<li><p><strong>Analysis:</strong> Compare identical workloads across
+policies and M4-only execution, repeating measurements to assess
+variability. Identify when dynamic scheduling outperforms equal and
+weighted static assignment and when its overhead outweighs the
+benefit.</p></li>
+</ul>
+
+<h3 id="hope-to-achieve">Hope to Achieve</h3>
+
+<p>Extend to two PSoC 6 boards over SPI or UART, evaluating when remote
+assignment and batched transfers justify communication overhead.</p>
+
+<h3 id="fallback-goals">Fallback Goals</h3>
+
+<p>Evaluate independent jobs with fixed calibration before adding
+dependency graphs, prioritizing correctness and scheduling analysis.</p>
+
+<h2 id="platform-choice">Platform Choice</h2>
+
+<p>We will use the CY8CPROTO-063-BLE board, which provides heterogeneous
+Cortex-M4 and Cortex-M0+ cores, shared SRAM, and hardware IPC. Their
+different processing capabilities make equal work distribution
+potentially inefficient, while shared-memory contention and coordination
+costs may limit the benefit of activating both cores.</p>
+
+<p>The board’s 288 KB of SRAM must accommodate firmware data, per-core
+stacks, application buffers, and runtime metadata. A configurable
+runtime memory budget allows us to investigate scheduling under
+different resource limits. Firmware control over inter-core coordination
+also enables direct measurement of dispatch, synchronization, and idle
+time, supporting a study of when scheduling mechanisms justify their
+cost on constrained embedded hardware.</p>
+
+<h2 id="schedule">Schedule</h2>
+
+<table>
+<thead>
+<tr>
+<th scope="col"><strong>Date</strong></th>
+<th scope="col"><strong>Deliverable</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nov. 9–15</td>
+<td>Set up both cores; establish M4-only
+benchmarks and initial per-core timing measurements.</td>
+</tr>
+<tr>
+<td>Nov. 16–22</td>
+<td>Implement shared-memory queues,
+completion/dependency tracking, and equal and weighted static
+assignment.</td>
+</tr>
+<tr>
+<td>Nov. 23</td>
+<td>Submit milestone report with preliminary
+measurements and an updated schedule.</td>
+</tr>
+<tr>
+<td>Nov. 23–29</td>
+<td>Implement ordinary and cost-aware work
+stealing; validate correctness across policies.</td>
+</tr>
+<tr>
+<td>Nov. 30–Dec. 6</td>
+<td>Evaluate task sizes, computation
+intensity, memory budgets, and arrival jitter; profile and optimize
+bottlenecks.</td>
+</tr>
+<tr>
+<td>Dec. 7–10</td>
+<td>Complete experiments, figures, and final
+report. Submit the final report by Dec. 10.</td>
+</tr>
+<tr>
+<td>Dec. 11</td>
+<td>Present the project and evaluation at the
+poster session.</td>
+</tr>
+</tbody>
+</table>
+
+<p><em>Stretch work: If core deliverables are complete, investigate
+two-board communication and batched remote job assignment.</em></p>
+
+<p><strong>Key deadlines from the proposal guidelines:</strong></p>
+
+<ul>
+<li><p>Proposal: November 9, 2026, 11:59 p.m.</p></li>
+<li><p>Milestone report: November 23, 2026, 11:59 p.m.</p></li>
+<li><p>Final report: December 10, 2026, 11:59 p.m.</p></li>
+<li><p>Poster session: December 11, 2026.</p></li>
+</ul>
+
+<h2 id="references">References</h2>
+
+<ol>
+<li id="ref-psoc-dual">Infineon Technologies. <em>AN215656: PSoC 6 MCU Dual-Core System
+Design</em>. <a href="https://documentation.infineon.com/psoc6/docs/yvt1667482437523/index.html">https://documentation.infineon.com/psoc6/docs/yvt1667482437523/index.html</a>.</li>
+<li id="ref-psoc-ipc">Infineon Technologies. <em>PSoC 6 Peripheral Driver Library: IPC
+(Inter Process Communication)</em>. <a href="https://infineon.github.io/psoc6pdl/pdl_api_reference_manual/html/group__group__ipc.html">https://infineon.github.io/psoc6pdl/pdl_api_reference_manual/html/group__group__ipc.html</a>.</li>
+<li id="ref-psoc-board">Infineon Technologies. <em>CY8CPROTO-063-BLE Board Support
+Package</em>. <a href="https://github.com/Infineon/TARGET_CY8CPROTO-063-BLE">https://github.com/Infineon/TARGET_CY8CPROTO-063-BLE</a>.</li>
+<li id="ref-psoc-start">Infineon Technologies. <em>AN228571: Getting Started with PSoC 6 MCU
+on ModusToolbox Software</em>. <a href="https://documentation.infineon.com/psoc6/docs/pvw1667470959605">https://documentation.infineon.com/psoc6/docs/pvw1667470959605</a>.</li>
+<li id="ref-psoc-examples">Infineon Technologies. <em>Code Examples for ModusToolbox
+Software</em>. <a href="https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software">https://github.com/Infineon/Code-Examples-for-ModusToolbox-Software</a>.</li>
+<li id="ref-psoc101">Cypress Semiconductor. <em>PSoC 6 101</em>. Video tutorial series. <a href="https://www.youtube.com/playlist?list=PLIOkqhZiy83H81AhLcjwIKkB9w07JQZS6">https://www.youtube.com/playlist?list=PLIOkqhZiy83H81AhLcjwIKkB9w07JQZS6</a>.</li>
+<li id="ref-work-stealing">Robert D. Blumofe and Charles E. Leiserson. “Scheduling Multithreaded
+Computations by Work Stealing.” <em>Journal of the ACM</em>,
+46(5):720–748, 1999. <a href="https://doi.org/10.1145/324133.324234">https://doi.org/10.1145/324133.324234</a>.</li>
+<li id="ref-heft">Haluk Topcuoglu, Salim Hariri, and Min-You Wu. “Performance-Effective
+and Low-Complexity Task Scheduling for Heterogeneous Computing.”
+<em>IEEE Transactions on Parallel and Distributed Systems</em>,
+13(3):260–274, 2002. <a href="https://doi.org/10.1109/71.993206">https://doi.org/10.1109/71.993206</a>.</li>
+</ol>
+
 </body>
 </html>
