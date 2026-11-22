@@ -2,6 +2,42 @@
 
 This is a minimal starter dual-CPU application template for PSoC&trade; 6 MCU devices.
 
+## M4 FIR workload and correctness checks
+
+On startup, the M4 checks a small example, then processes one independent
+block of 256 generated `int16_t` samples with an 8-tap FIR filter. The M0+
+continues its existing green heartbeat and does not process filtering jobs.
+
+The filter computes `y[n] = x[n] + 2*x[n-1] + ... + 8*x[n-7]`. Samples
+before the beginning of a block are zero. Each call has fresh zero history;
+continuous filtering across consecutive blocks is not implemented yet.
+Outputs are unnormalized `int32_t` weighted sums (the weights sum to 36).
+
+The built-in check uses input `[1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0]`
+and hand-calculated output `[1, 4, 10, 20, 30, 40, 50, 60, 61, 52, 32, 0]`.
+For example, the second output is `2 + 2*1 = 4`, and the fourth is
+`4 + 2*3 + 3*2 + 4*1 = 20`. It repeats this check and also checks all-zero
+and negative inputs, verifying that previous calls leave no filter state.
+
+The 256-sample workload uses `x[i] = ((17*i + 13) % 256) - 128`.
+Input generation happens before filtering. The output is consumed through
+a checksum, which is checked against the expected value `-19014`.
+
+After programming the whole application, inspect the following CM4 symbols:
+
+| Symbol | Expected after successful startup |
+| --- | --- |
+| `cm4_fir_status` | `1` = passed; `0` = not finished; `2` = failed |
+| `cm4_fir_jobs_completed` | `1` |
+| `cm4_fir_checksum` | `-19014` |
+| `cm4_fir_input` | The generated 256-sample input buffer |
+| `cm4_fir_output` | The 256 filtered output values |
+
+The M4's red LED blinks after the checks pass and stays on if a check fails.
+The M0+'s green LED continues blinking independently. No UART is needed.
+Filtering runs once at startup; the later LED loop does not rerun it.
+Execution-time measurement and scheduling are not part of this step.
+
 ## Dual-core heartbeat test (CY8CPROTO-063-BLE)
 
 Each core drives a different onboard LED through PDL GPIO APIs:
@@ -26,9 +62,9 @@ separate per-core variables, not a shared-memory communication test.
 Pausing a core stops its heartbeat while the other can continue, provided
 the debugger configuration does not halt both cores together.
 
-This bring-up test uses busy-wait delays; these are not timing measurements
-or the scheduler's eventual idle behavior. Replace the heartbeat loops when
-adding benchmark work.
+The heartbeat loops use busy-wait delays; these are not timing measurements
+or the scheduler's eventual idle behavior. The M4 runs its FIR check/job
+before entering its heartbeat loop.
 
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-psoc6-dual-cpu-empty-app)

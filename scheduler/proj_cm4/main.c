@@ -1,8 +1,7 @@
 /******************************************************************************
 * File Name:   main.c
 *
-* Description: This is the source code for CM4 in the the Dual CPU Empty 
-*              Application for ModusToolbox.
+* Description: CM4 FIR workload, correctness checks, and LED heartbeat.
 *
 * Related Document: See README.md
 *
@@ -42,14 +41,26 @@
 
 #include "cy_pdl.h"
 #include "cybsp.h"
+#include "fir.h"
 
 
 #define HEARTBEAT_LED_PORT       GPIO_PRT6
 #define HEARTBEAT_LED_PIN        (3U)    /* Red LED3 on CY8CPROTO-063-BLE. */
 #define HEARTBEAT_TOGGLE_MS      (500U)
+#define FIR_STATUS_NOT_RUN       (0U)
+#define FIR_STATUS_PASSED        (1U)
+#define FIR_STATUS_FAILED        (2U)
+#define FIR_EXPECTED_CHECKSUM    (-19014)
 
 /* Local to this core's firmware; useful when inspecting the CM4 image. */
 volatile uint32_t cm4_heartbeat_count = 0U;
+
+/* Inspect these symbols with the CM4 debugger after startup. */
+int16_t cm4_fir_input[FIR_SAMPLE_COUNT];
+int32_t cm4_fir_output[FIR_SAMPLE_COUNT];
+volatile uint32_t cm4_fir_status = FIR_STATUS_NOT_RUN;
+volatile uint32_t cm4_fir_jobs_completed = 0U;
+volatile int32_t cm4_fir_checksum = 0;
 
 int main(void)
 {
@@ -65,9 +76,37 @@ int main(void)
     Cy_GPIO_Pin_FastInit(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN,
                         CY_GPIO_DM_STRONG_IN_OFF, 1U, HSIOM_SEL_GPIO);
 
+    if (fir_self_test())
+    {
+        fir_generate_input(cm4_fir_input, FIR_SAMPLE_COUNT);
+        fir_filter_block(cm4_fir_input, cm4_fir_output, FIR_SAMPLE_COUNT);
+
+        int32_t checksum = 0;
+        for (size_t i = 0U; i < FIR_SAMPLE_COUNT; ++i)
+        {
+            checksum += cm4_fir_output[i];
+        }
+        cm4_fir_checksum = checksum;
+        cm4_fir_jobs_completed = 1U;
+        cm4_fir_status = (checksum == FIR_EXPECTED_CHECKSUM)
+                         ? FIR_STATUS_PASSED : FIR_STATUS_FAILED;
+    }
+    else
+    {
+        cm4_fir_status = FIR_STATUS_FAILED;
+    }
+
     for (;;)
     {
-        Cy_GPIO_Inv(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN);
+        if (cm4_fir_status == FIR_STATUS_PASSED)
+        {
+            Cy_GPIO_Inv(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN);
+        }
+        else
+        {
+            /* Active-low red LED stays on if a correctness check fails. */
+            Cy_GPIO_Clr(HEARTBEAT_LED_PORT, HEARTBEAT_LED_PIN);
+        }
         ++cm4_heartbeat_count;
         Cy_SysLib_Delay(HEARTBEAT_TOGGLE_MS);
     }
