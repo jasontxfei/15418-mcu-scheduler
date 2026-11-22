@@ -48,6 +48,39 @@
 
 volatile uint32_t cm4_heartbeat_count = 0U;
 
+// helper function for printing results to serial terminal
+static void serial_print_results(void)
+{
+    printf("M4 FIR: samples=%u taps=%u status=%lu "
+           "timer_ready=%lu checksum=%ld\r\n",
+           (unsigned int)FIR_SAMPLE_COUNT,
+           (unsigned int)FIR_TAP_COUNT,
+           (unsigned long)cm4_fir_status,
+           (unsigned long)cm4_fir_timer_ready,
+           (long)cm4_fir_checksum);
+
+    printf("core_hz=%lu timer_hz=%lu ticks=%lu time_ns=",
+           (unsigned long)cm4_core_clock_hz,
+           (unsigned long)cm4_timer_clock_hz,
+           (unsigned long)cm4_fir_ticks);
+
+    /* Avoid %llu, which newlib-nano doesn't support. */
+    const uint64_t time_ns = cm4_fir_time_ns;
+    if (time_ns >= 1000000000ULL)
+    {
+        printf("%lu%09lu",
+               (unsigned long)(time_ns / 1000000000ULL),
+               (unsigned long)(time_ns % 1000000000ULL));
+    }
+    else
+    {
+        printf("%lu", (unsigned long)time_ns);
+    }
+
+    printf("\r\n");
+    (void)fflush(stdout);
+}
+
 int main(void)
 {
     cy_rslt_t result = cybsp_init();
