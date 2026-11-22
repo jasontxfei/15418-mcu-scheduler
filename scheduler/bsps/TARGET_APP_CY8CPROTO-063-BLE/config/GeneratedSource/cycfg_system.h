@@ -79,12 +79,12 @@ extern "C" {
 #define srss_0_clock_0_pll_0_ENABLED 1U
 #define srss_0_clock_0_hfclk_0_ENABLED 1U
 #define CY_CFG_SYSCLK_CLKHF0 0UL
-#define CY_CFG_SYSCLK_CLKHF0_FREQ_MHZ 100UL
-#define CY_CFG_SYSCLK_CLKHF0_CLKPATH_NUM 0UL
+#define CY_CFG_SYSCLK_CLKHF0_FREQ_MHZ 150UL
+#define CY_CFG_SYSCLK_CLKHF0_CLKPATH_NUM 1UL
 #define srss_0_clock_0_fastclk_0_ENABLED 1U
 #define srss_0_clock_0_periclk_0_ENABLED 1U
 #define CY_CFG_SYSCLK_CLKPERI_ENABLED 1
-#define CY_CFG_SYSCLK_CLKPERI_DIVIDER 0
+#define CY_CFG_SYSCLK_CLKPERI_DIVIDER 1
 #define srss_0_clock_0_slowclk_0_ENABLED 1U
 #define cpuss_0_dap_0_ENABLED 1U
 

@@ -50,6 +50,9 @@ TOOLCHAIN=GCC_ARM
 # 
 # If CONFIG is manually edited, ensure to update or regenerate launch configurations 
 # for your IDE.
-CONFIG=Debug
+CONFIG=Custom
+
+# Compare with BENCH_OPT=-Os / -O2 / -O3. No LTO or fast-math.
+BENCH_OPT ?= -O2
 
 include ../common_app.mk

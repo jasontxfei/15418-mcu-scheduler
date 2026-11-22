@@ -5,22 +5,31 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define FIR_TAP_COUNT    (8U)
-#define FIR_SAMPLE_COUNT (256U)
+#define FIR_MAX_TAPS 32U
+#define FIR_MAX_COEFFICIENT_L1 65535U
 
-/* Fill a block with repeatable samples in the range [-128, 127]. */
-void fir_generate_input(int16_t *input, size_t sample_count);
+typedef struct
+{
+    uint32_t tap_count;
+    int16_t coefficients[FIR_MAX_TAPS];
+} fir_plan_t;
 
-/*
- * y[n] = x[n] + 2*x[n-1] + ... + 8*x[n-7], with x[n] = 0 for n < 0.
- * Each call starts with zero history and writes exactly sample_count outputs.
- * The input/output buffers must not overlap. Outputs are unnormalized int32_t
- * weighted sums; all int16_t input values fit safely with these fixed weights.
- */
-void fir_filter_block(const int16_t *input, int32_t *output,
-                      size_t sample_count);
+/* coefficients[0] multiplies the current sample. Preparation copies arbitrary
+ * signed coefficients, rejecting zero/too many taps or sum(abs(c)) > 65535.
+ * This bound makes every partial sum fit int32_t for every int16_t input.
+ * On failure the plan is invalidated (tap_count == 0). Preparation is not part
+ * of a filtering job; the immutable plan can be reused by either core. */
+bool fir_plan_init(fir_plan_t *plan, const int16_t *coefficients, size_t taps);
 
-/* Check hand-calculated outputs, signed inputs, and independent repeated calls. */
-bool fir_self_test(void);
+/* Both kernels implement exactly the same unscaled integer convolution:
+ * output[n] = sum(coefficients[k] * input[n-k]), with input[n<0] = 0.
+ * Each call has independent zero history. Buffers and plan must not overlap;
+ * input/output hold sample_count elements. A valid initialized plan is required.
+ * sample_count == 0 touches neither input nor output. No allocation or IPC.
+ * The DSP kernel uses M4 dual 16-bit MACs; other targets use a scalar fallback. */
+void fir_filter_scalar(const fir_plan_t *plan, const int16_t *input,
+                       int32_t *output, size_t sample_count);
+void fir_filter_dsp(const fir_plan_t *plan, const int16_t *input,
+                    int32_t *output, size_t sample_count);
 
-#endif /* MCU_SCHEDULER_FIR_H */
+#endif

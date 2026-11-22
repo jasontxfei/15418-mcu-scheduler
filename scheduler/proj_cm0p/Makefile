@@ -66,11 +66,11 @@ CORE_NAME=CM0P_0
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES=../shared/fir.c
+SOURCES=
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
-INCLUDES=../shared
+INCLUDES=
 
 # Add additional defines to the build process (without a leading -D).
 DEFINES+=CY_CORTEX_M4_APPL_ADDR=CY_FLASH_BASE+0x4400U
@@ -82,13 +82,13 @@ VFP_SELECT=
 #
 # NOTE: Includes and defines should use the INCLUDES and DEFINES variable
 # above.
-CFLAGS=
+CFLAGS=$(BENCH_OPT)
 
 # Additional / custom C++ compiler flags.
 #
 # NOTE: Includes and defines should use the INCLUDES and DEFINES variable
 # above.
-CXXFLAGS=
+CXXFLAGS=$(BENCH_OPT)
 
 # Additional / custom assembler flags.
 #

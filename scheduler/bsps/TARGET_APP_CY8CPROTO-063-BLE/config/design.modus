@@ -131,7 +131,7 @@
                 </Block>
                 <Block location="srss[0].clock[0].hfclk[0]">
                     <Personality template="hfclk" version="3.0">
-                        <Param id="sourceClockNumber" value="0"/>
+                        <Param id="sourceClockNumber" value="1"/>
                         <Param id="divider" value="1"/>
                     </Personality>
                 </Block>
@@ -177,14 +177,14 @@
                 </Block>
                 <Block location="srss[0].clock[0].periclk[0]">
                     <Personality template="periclk" version="2.0">
-                        <Param id="divider" value="1"/>
+                        <Param id="divider" value="2"/>
                     </Personality>
                 </Block>
                 <Block location="srss[0].clock[0].pll[0]">
                     <Personality template="pll" version="3.0">
                         <Param id="lowFrequencyMode" value="false"/>
                         <Param id="configuration" value="auto"/>
-                        <Param id="desiredFrequency" value="48.000"/>
+                        <Param id="desiredFrequency" value="150.000"/>
                         <Param id="optimization" value="MinPower"/>
                     </Personality>
                 </Block>

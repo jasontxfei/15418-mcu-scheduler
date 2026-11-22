@@ -10,6 +10,12 @@ Jason Tang (jasont2) and Catherine Li (catheri5) · Fall 2026
 
 The site uses plain HTML and default browser styling. No CSS, JavaScript, dependencies, or build step are required to serve it.
 
+## Firmware benchmark
+
+The `jason/sequential-baseline` branch contains the general FIR API and an
+optimized M4-only batch benchmark. See [scheduler/BENCHMARK.md](scheduler/BENCHMARK.md)
+for setup, correctness checks, measurement boundaries, and reproduction.
+
 ## Edit
 
 - `docs/index.html`: homepage, report links, and schedule.

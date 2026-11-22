@@ -2,88 +2,25 @@
 
 This is a minimal starter dual-CPU application template for PSoC&trade; 6 MCU devices.
 
-## Current benchmark: FIR filtering on M0+
+## Current benchmark: general FIR on M4
 
-M0+ initializes the board and TCPWM0 counter 0, checks the FIR kernel, starts
-M4, waits 20 ms for startup to settle, and measures one filtering job. M4
-only runs its red LED heartbeat; it does not initialize the timer or UART.
-The benchmark currently uses 256 generated samples, eight integer taps,
-and weights `{1,2,3,4,5,6,7,8}`. Each block starts with zero history.
+The M0+ initializes the board, starts the M4, and sleeps. The M4 compares
+portable scalar and DSP kernels on batches of 16 independent FIR jobs. Each
+job has caller-supplied signed coefficients and independent zero history.
+The default is M4 at 150 MHz with GCC `-O2`; the measurement tool also supports
+100 MHz and compares `-Os`, `-O2`, and `-O3`.
 
-The kernel is in `shared/fir.c` and `shared/fir.h`. The M0+ Makefile
-references this implementation directly. M4 does not compile the kernel
-while it only runs the heartbeat; a later M4 benchmark can reference the
-same shared files instead of maintaining a separate copy. The benchmark driver and expected
-checksum are currently in `proj_cm0p/main.c`.
+See [BENCHMARK.md](BENCHMARK.md) for the exact integer contract, measurement
+boundaries, clock settings, tests, and reproduction commands. The API is in
+`shared/fir.h`. The full measured matrix is in
+[benchmarks/sequential-results.json](benchmarks/sequential-results.json).
 
-The self-test checks a hand-calculated example, repeated calls, zero input,
-and negative input. The generated data uses `x[i] = ((17*i+13)%256)-128`;
-the expected 256-sample, eight-tap checksum is `-19014`. Changing sample
-count or coefficients requires updating the expected checksum; changing
-coefficients also requires updating the self-test expectations.
+Results are read through KitProg after the benchmark finishes. Both cores
+sleep afterward, so blinking LEDs or serial output are not expected. A board
+reset reruns the benchmark. No scheduler or cross-core filtering is implemented
+yet. The earlier M0+ bring-up benchmark remains in Git history.
 
-### Build and inspect
-
-Build and program the **whole application**, including both core images.
-Open the M0+ debugger session and let execution run to the heartbeat loop
-without stepping or breakpoints inside the timed filter call. Inspect:
-
-| Symbol | Expected / meaning |
-| --- | --- |
-| `cm0p_fir_status` | `1` = passed; `0` = unfinished; `2` = failed |
-| `cm0p_fir_self_test_passed` | `1` = FIR self-test passed |
-| `cm0p_fir_timer_ready` | `1` = TCPWM counter is advancing |
-| `cm0p_fir_jobs_completed` | `1` |
-| `cm0p_fir_checksum` | `-19014` with the default configuration |
-| `cm0p_fir_ticks` | Elapsed TCPWM ticks for one filter call |
-| `cm0p_fir_time_ns` | Elapsed time in nanoseconds, rounded down |
-| `cm0p_core_clock_hz` | M0+ frequency from the slow CPU clock |
-| `cm0p_timer_clock_hz` | TCPWM tick frequency, not M0+ CPU frequency |
-| `cm0p_fir_input`, `cm0p_fir_output` | Input and output buffers |
-
-Green LED4 (P7_1) blinks after success and stays on if a check fails. Red
-LED3 (P6_3) always runs the M4 heartbeat. Green toggles every 250 ms and red
-every 500 ms. The delay loops are bring-up behavior, not benchmark timing.
-A whole-board reset reruns the job; the heartbeat loops do not rerun it.
-
-### Measurement boundaries and ownership
-
-The timer is a free-running 32-bit up counter with period `UINT32_MAX`,
-16-bit peripheral divider 0 set to /1, and a /1 TCPWM prescaler. M0+ alone
-initializes it; M4 must not reset or reconfigure it. Keep this counter and
-divider dedicated to timing. No timer interrupt or external pin is needed.
-
-Only the filter call is measured, including call and timing-boundary
-overhead. Initialization, self-tests, input generation, the settling delay,
-checksum calculation, and tick-to-time conversion are outside the measured
-interval. The conversion is `time_ns = ticks*1,000,000,000/timer_clock_hz`.
-Use the timer frequency, not the CPU frequency, for this conversion. Record
-both clocks and the build configuration when comparing M4 and M0+.
-
-Interrupts remain enabled and the other core's heartbeat remains active,
-as in the earlier M4 experiment. This is a startup measurement after the
-self-test, not a cold-start kernel measurement. Each interval must be
-shorter than `2^32/timer_clock_hz` seconds to handle counter wrap correctly.
-
-### UART output
-
-This M0+ benchmark exposes results through the debugger. It does not print
-serial results: application HAL/retarget-io use remains on M4, and the
-current M4 image only blinks. The existing M4 retarget-io dependency is
-retained for later result forwarding, but cross-core result transfer and
-serial reporting of M0+ measurements are not implemented in this step.
-
-The previous M4 implementation remains in Git history. To switch the
-benchmark back later, reuse `shared/fir.c`, move timer/job ownership to M4,
-and leave M0+ performing board initialization, M4 startup, and heartbeat.
-Only the benchmarking core should configure the timer.
-
-The linker layout allocates 16 KB of SRAM to M0+. This supports the
-1024-sample benchmark, whose input/output buffers require 6 KB in addition
-to firmware data, heap, and stack. M4 RAM starts at `0x08004000` and ends
-at `0x08047800`, preserving the top 2 KB for system use. Both linker scripts
-must be updated together when changing these partitions; the full chip's
-SRAM is not automatically available to either image.
+The original Infineon template documentation follows for reference.
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-psoc6-dual-cpu-empty-app)
 
