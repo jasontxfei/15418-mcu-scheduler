@@ -129,9 +129,58 @@ count from four to 32 increased execution time by approximately
 $6.05\times$ (Table~\ref{tab:m4-fir-taps}). This is consistent with increasing
 filtering work alongside fixed per-sample overhead and fewer active taps
 near the zero-padded beginning of each block. These measurements establish
-initial job costs for varying granularity and computation per output;
-M0+ timings and dispatch-overhead measurements will be needed to evaluate
-scheduler assignment decisions.
+initial job costs for varying granularity and computation per output.
+Dispatch-overhead measurements will be needed to determine when job
+redistribution justifies its cost.
+
+\subsection{M0+ FIR Execution Times}
+We repeated the same FIR configurations on the Cortex-M0+, with the M0+
+and TCPWM clocks both at 100\,MHz and the same GCC\_ARM Debug
+(\texttt{-Og}) build configuration. Each result is the median of three
+runs, which again produced consistent reported times. The M4 ran only its
+LED heartbeat, and results were inspected through the M0+ debugger after
+the measured interval. Input generation, correctness checks, checksum
+calculation, and time conversion remained outside the timed filter call.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}rrr@{}}
+\toprule
+\textbf{Samples per job} & \textbf{Taps} & \textbf{Median time (ns)} \\
+\midrule
+64 & 8 & 83,580 \\
+128 & 8 & 170,620 \\
+256 & 8 & 344,840 \\
+512 & 8 & 692,980 \\
+1024 & 8 & 1,389,300 \\
+\bottomrule
+\end{tabular}
+\caption{M0+ execution time with varying sample counts and eight filter taps.}
+\label{tab:m0p-fir-samples}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}rrr@{}}
+\toprule
+\textbf{Samples per job} & \textbf{Taps} & \textbf{Median time (ns)} \\
+\midrule
+256 & 4 & 194,410 \\
+256 & 8 & 344,840 \\
+256 & 16 & 638,550 \\
+256 & 32 & 1,197,050 \\
+\bottomrule
+\end{tabular}
+\caption{M0+ execution time with varying tap counts and 256 samples per job.}
+\label{tab:m0p-fir-taps}
+\end{table}
+
+The M0+ showed similar scaling trends but took approximately 22--25\%
+longer than the M4 across these configurations. For example, the
+256-sample, eight-tap job took 344,840\,ns on M0+ versus 279,090\,ns on M4
+(approximately 24\% longer). The measured difference at equal clock
+frequencies motivates using per-core execution-cost estimates rather than
+assuming equal processing rates when distributing jobs.
 
 \section{Challenges and Remaining Unknowns}
 We initially chose the PSoC 6 because of prior familiarity and its
@@ -139,6 +188,13 @@ heterogeneous multicore architecture, which fit our project requirements.
 Despite this, we encountered unexpected issues with the hardware. In the basic Hello World demo to first test our board, we encountered corrupted or missing UART output, which would later become a problem in attempting to establish a debugging interface (which would be through UART with the computer's serial terminal). We checked serial settings and verified firmware execution in the debugger, then used a TX/RX loopback test to confirm that the computer-to-KitProg serial bridge worked. With directed jumper tests, we were able to figure out that the problem lay in the onboard connection between the debugger and the PSoC itself, and we eventually found a workaround solution by bypassing the TX/RX paths using jumper wires, restoring the expected output and behavior upon input. Regardless, establishing a
 working hardware baseline took longer than expected and delayed actual
 scheduler development.
+
+Testing 1024 samples on M0+ also exposed a linker RAM-allocation limit:
+its 12\,KB region could not accommodate the 6\,KB input/output buffers
+alongside firmware data, heap, and stack. We increased M0+'s allocation to
+16\,KB, taking 4\,KB from M4 and updating both linker scripts to keep their
+regions separate. This resolved the build failure and allowed the larger
+benchmark configuration to run.
 
 \TODO{List the remaining technical or resource uncertainties and how you
 plan to address them. Identify any questions to discuss with course staff.}

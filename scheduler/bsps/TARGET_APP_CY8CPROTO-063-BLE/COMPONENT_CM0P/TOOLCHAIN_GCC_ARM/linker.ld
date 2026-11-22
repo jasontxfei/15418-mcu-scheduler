@@ -65,7 +65,8 @@ MEMORY
      * Your changes must be aligned with the corresponding memory regions for the CM4 core in 'xx_cm4_dual.ld',
      * where 'xx' is the device group; for example, 'cy8c6xx7_cm4_dual.ld'.
      */
-    ram               (rwx)   : ORIGIN = 0x08000000, LENGTH = 0x03000
+    /* 16 KB for the M0+ benchmark, paired with the M4 RAM origin below. */
+    ram               (rwx)   : ORIGIN = 0x08000000, LENGTH = 0x04000
     flash             (rx)    : ORIGIN = 0x10000000, LENGTH = 0x4400
 
     /* This is a 32K flash region used for EEPROM emulation. This region can also be used as the general purpose flash.

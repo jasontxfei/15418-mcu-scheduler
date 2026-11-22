@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define FIR_TAP_COUNT    (32U)
+#define FIR_TAP_COUNT    (8U)
 #define FIR_SAMPLE_COUNT (256U)
 
 /* Fill a block with repeatable samples in the range [-128, 127]. */
