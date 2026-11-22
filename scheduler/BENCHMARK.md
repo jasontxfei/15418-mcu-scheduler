@@ -4,6 +4,8 @@
 It has no task queue, dependencies, or work stealing. The separate
 `APP_MODE=dispatch` prototype tests a single remote job; see [DISPATCH.md](DISPATCH.md).
 The mixed-workload and scheduling roadmap is in [PLAN.md](PLAN.md).
+`APP_MODE=greedy` now compares concurrent first-available workers with fresh
+direct M4-only timings on identical shared buffers; see [GREEDY.md](GREEDY.md).
 
 ## Work and integer semantics
 

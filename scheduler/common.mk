@@ -57,8 +57,8 @@ BENCH_OPT ?= -O2
 
 # sequential retains the M4-only reference; dispatch runs the IPC bring-up.
 APP_MODE ?= sequential
-ifneq ($(filter $(APP_MODE),sequential dispatch),$(APP_MODE))
-$(error APP_MODE must be sequential or dispatch)
+ifneq ($(filter $(APP_MODE),sequential dispatch greedy),$(APP_MODE))
+$(error APP_MODE must be sequential, dispatch, or greedy)
 endif
 
 include ../common_app.mk

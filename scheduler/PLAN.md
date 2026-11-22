@@ -36,10 +36,18 @@ kernel; they are not a separate processor or a vendor-provided task scheduler.
    exactly-once execution, invalid requests, busy submission, and stale IDs.
    See [DISPATCH.md](DISPATCH.md). This is a transport prototype, not yet a
    queue or a scheduling policy.
+3. **Naive greedy parallel baseline.** A preloaded batch of up to 32 FIR jobs
+   shares a bounded buffer pool. Each free core claims the next job under a
+   short hardware lock, then runs outside the lock. M4 computes local jobs
+   while M0+ runs; completion epochs protect reuse. The hardware comparison
+   uses matched direct M4-only calls, tests both kernels on each core, checks
+   full outputs and exactly-once claims, and saves separate interval traces
+   proving actual overlap. See [GREEDY.md](GREEDY.md). No cost estimates are
+   used for assignment; this is not the profiled static policy below.
 
 The sequential benchmark remains selectable with `APP_MODE=sequential`.
-The transport benchmark uses `APP_MODE=dispatch`. Neither currently has both
-cores filtering useful jobs concurrently. Historical milestone/proposal files
+The transport benchmark uses `APP_MODE=dispatch`; the concurrent ready-list
+baseline uses `APP_MODE=greedy`. Historical milestone/proposal files
 are not rewritten to imply that planned features already exist.
 
 ## Next: characterize jobs and dispatch costs
@@ -59,7 +67,9 @@ only to manufacture a favorable speedup.
 Measure each supported implementation on both cores before fixing kernel
 choices. The transport prototype currently calls the portable scalar FIR on
 M0+; that is not a claim that it is M0+'s fastest implementation. Test its
-unrolled fallback too. Calibrate separately for 100/100 and 150/75 MHz.
+unrolled fallback too. The greedy benchmark now tests both and selects a fixed
+implementation per core/workload outside timing, without using job costs for
+placement. Calibrate separately for 100/100 and 150/75 MHz.
 
 Vary samples, FIR taps, job type, and input/output bytes. Include uniform jobs,
 mixed job sizes, and mixed operation types. Both cores may favor the same job
@@ -90,11 +100,16 @@ per-dispatch cost.
 
 ## Then: bounded queues and concurrent workers
 
-Replace the one-slot transport with a bounded, allocation-free queue and
-explicit buffer ownership. M4 must be able to execute local work while M0+
-executes a submitted job. Do not keep M4 busy-waiting for each individual job
-in the actual parallel benchmark. Include scheduling work on the core that
-performs it; the coordinator's CPU time is not free.
+The first step is implemented for preloaded independent FIR batches: bounded
+storage, explicit ownership, a shared next-job index, and useful concurrent
+work on both cores. The next extension is a general bounded enqueue API and
+ready queues supporting multiple operation types and dependencies. The current
+index resets between batches and is not a general streaming ring queue.
+
+Do not keep M4 busy-waiting for each individual job in the actual parallel
+benchmark. Include scheduling work on the core that performs it; the
+coordinator's CPU time is not free. The greedy benchmark includes its per-batch
+ready-list initialization in parallel elapsed time.
 
 Exit: both cores perform useful work concurrently, every job completes exactly
 once, output matches the sequential execution, and queue-full/empty behavior
@@ -143,6 +158,12 @@ unknown costs, or arbitrary DAG schedules. Compare model quality separately
 from hardware makespan. Do not run exponential search in the MCU runtime.
 
 ## Compare dynamic policies
+
+Keep the implemented first-available-worker greedy policy as the simplest
+parallel baseline. It uses no cost model and is distinct from stealing or
+profiled greedy static assignment. Compare it with optimized M4-only execution
+to assess whether parallelism helps, and with the following policies to assess
+the benefit of smarter placement.
 
 Retain the proposal's three policy families:
 

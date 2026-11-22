@@ -66,7 +66,7 @@ CORE_NAME=CM0P_0
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES=$(if $(filter dispatch,$(APP_MODE)),../shared/fir.c ../shared/job_mailbox.c)
+SOURCES=$(if $(filter dispatch greedy,$(APP_MODE)),../shared/fir.c) $(if $(filter dispatch,$(APP_MODE)),../shared/job_mailbox.c) $(if $(filter greedy,$(APP_MODE)),../shared/greedy_batch.c)
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
@@ -75,6 +75,7 @@ INCLUDES=../shared
 # Add additional defines to the build process (without a leading -D).
 DEFINES+=CY_CORTEX_M4_APPL_ADDR=CY_FLASH_BASE+0x8000U
 DEFINES+=MCU_DISPATCH_BENCHMARK=$(if $(filter dispatch,$(APP_MODE)),1,0)
+DEFINES+=MCU_GREEDY_BENCHMARK=$(if $(filter greedy,$(APP_MODE)),1,0)
 
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=

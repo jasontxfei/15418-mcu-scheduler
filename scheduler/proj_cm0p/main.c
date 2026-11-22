@@ -42,7 +42,17 @@
 #include "cy_pdl.h"
 #include "cybsp.h"
 
-#if MCU_DISPATCH_BENCHMARK
+#if MCU_GREEDY_BENCHMARK
+#include "greedy_batch.h"
+int main(void)
+{
+    if (cybsp_init() != CY_RSLT_SUCCESS) for (;;) {}
+    if (!batch_worker_init()) for (;;) {}
+    __enable_irq();
+    Cy_SysEnableCM4(CY_CORTEX_M4_APPL_ADDR);
+    batch_worker_loop();
+}
+#elif MCU_DISPATCH_BENCHMARK
 #include "job_mailbox.h"
 int main(void)
 {

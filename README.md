@@ -12,8 +12,8 @@ The site uses plain HTML and default browser styling. No CSS, JavaScript, depend
 
 ## Firmware benchmark
 
-The `jason/cross-core-dispatch` branch adds a shared-memory M4-to-M0+ job path
-and retains the optimized M4-only benchmark. Start with
+The `jason/greedy-baseline` branch adds concurrent first-available-worker FIR
+batches and retains the sequential and single-job dispatch benchmarks. Start with
 [the runtime plan](scheduler/PLAN.md), which distinguishes completed work from
 the planned mixed workloads, profiled greedy static assignment, work stealing,
 cost-aware scheduling, and dependency graphs.
@@ -22,10 +22,12 @@ cost-aware scheduling, and dependency graphs.
   strongest tested M4 baseline, and reproduction.
 - [Cross-core dispatch](scheduler/DISPATCH.md): ownership, memory layout,
   interrupt wakeup, correctness checks, and handoff timing.
+- [Naive greedy baseline](scheduler/GREEDY.md): simultaneous work on both cores,
+  matched sequential comparisons, job ownership, and overlap traces.
 
 The runtime accepts explicit jobs from the application; it will not automatically
-parallelize arbitrary programs. The current cross-core prototype has one slot
-and waits for each completion. A bounded queue and concurrent execution are next.
+parallelize arbitrary programs. Greedy mode supports a bounded preloaded FIR
+batch. Mixed operation types, general enqueueing, and dependencies remain planned.
 
 ## Edit
 

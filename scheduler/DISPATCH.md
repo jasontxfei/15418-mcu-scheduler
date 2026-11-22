@@ -119,6 +119,7 @@ including 1302 timed round trips. The NOOP median at 100/100 MHz was about
 preserved sequential mode also passed its 40 kernel/workload cases with 31
 verified trials each after the shared-memory reservation was added.
 
-The next change is a real second operation and per-core calibration, followed
-by bounded queues and concurrent local/remote execution. Keep this single-slot
-path as a correctness and dispatch-cost reference while those are developed.
+The separate [greedy batch](GREEDY.md) now supports bounded preloaded FIR jobs,
+per-core kernel calibration, and concurrent execution. A real second operation,
+general enqueueing, and cost-aware assignment remain planned. Keep this
+single-slot path as a correctness and dispatch-cost reference.

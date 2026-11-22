@@ -39,7 +39,10 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
-#if MCU_DISPATCH_BENCHMARK
+#if MCU_GREEDY_BENCHMARK
+#include "greedy_batch.h"
+int main(void) { return greedy_benchmark_main(); }
+#elif MCU_DISPATCH_BENCHMARK
 #include "dispatch_benchmark.h"
 int main(void) { return dispatch_benchmark_main(); }
 #else
