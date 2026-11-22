@@ -1,0 +1,191 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{xcolor}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[
+    colorlinks=true,
+    urlcolor=blue,
+    linkcolor=blue,
+    citecolor=blue
+]{hyperref}
+
+\newcommand{\TODO}[1]{\textcolor{red}{\textbf{TODO:} #1}}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.6em}
+
+\title{Workload- and Memory-Aware Scheduler\\
+for Heterogeneous Embedded MCU Cores\\[0.5em]
+\large Milestone Report}
+\author{Jason Tang (jasont2) \and Catherine Li (catheri5)}
+\date{November 23, 2026}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Project URL:}
+\href{https://jasontxfei.github.io/15418-mcu-scheduler/}{https://jasontxfei.github.io/15418-mcu-scheduler/}
+
+\section{Progress So Far}
+% The guidelines suggest one to two paragraphs summarizing completed work.
+\TODO{Summarize the work completed since the proposal. Distinguish
+implemented and verified components from work that is still in progress.}
+
+\TODO{Briefly describe the current state of the hardware setup, dual-core
+execution, runtime, workloads, and profiling, as applicable.}
+
+\section{Status of Proposed Goals}
+% Compare progress with the goals and schedule in the original proposal.
+\begin{table}[H]
+\centering
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.5cm}YY@{}}
+\toprule
+\textbf{Proposed goal} & \textbf{Current status} & \textbf{Remaining work} \\
+\midrule[0.8pt]
+Runtime & \TODO{Status.} & \TODO{Next steps.} \\
+\midrule[0.25pt]
+Profiling & \TODO{Status.} & \TODO{Next steps.} \\
+\midrule[0.25pt]
+Benchmarks & \TODO{Status.} & \TODO{Next steps.} \\
+\midrule[0.25pt]
+Evaluation & \TODO{Status.} & \TODO{Next steps.} \\
+\midrule[0.25pt]
+Analysis & \TODO{Status.} & \TODO{Next steps.} \\
+\bottomrule
+\end{tabularx}
+\caption{Progress against the deliverables in the proposal.}
+\label{tab:goal-status}
+\end{table}
+
+\TODO{State whether the original deliverables and schedule remain
+achievable. Explain any changes to scope or priorities, including the
+multi-board stretch goal.}
+
+\section{Updated Goals and Deliverables}
+% Give a revised list of goals to reach by the poster session.
+\subsection{Plan to Achieve}
+\TODO{List the concrete deliverables that remain the core goals of the
+project. Specify what will be implemented, validated, and measured.}
+
+\subsection{Hope to Achieve}
+\TODO{List any stretch goals that remain realistic, or state that stretch
+work has been deferred to prioritize the core deliverables.}
+
+\subsection{Fallback Goals}
+\TODO{Describe the reduced scope to prioritize if the remaining work takes
+longer than expected.}
+
+\section{Preliminary Results}
+\subsection{M4 FIR Execution Times}
+We measured a single-channel integer FIR-filtering job on the Cortex-M4
+using generated input data and a free-running TCPWM counter. The M4 and
+timer clocks both ran at 100\,MHz, and the project build configuration
+was GCC\_ARM Debug (\texttt{-Og}). Each configuration was measured over
+three runs; the reported times were consistent across those runs, so we
+show only the median. Input generation, correctness checks, checksum
+calculation, and UART output were excluded from the timed interval.
+The M0+ continued its LED heartbeat and did not execute filtering jobs.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}rrr@{}}
+\toprule
+\textbf{Samples per job} & \textbf{Taps} & \textbf{Median time (ns)} \\
+\midrule
+64 & 8 & 67,730 \\
+128 & 8 & 138,130 \\
+256 & 8 & 279,090 \\
+512 & 8 & 560,690 \\
+1024 & 8 & 1,123,890 \\
+\bottomrule
+\end{tabular}
+\caption{M4 execution time with varying sample counts and eight filter taps.}
+\label{tab:m4-fir-samples}
+\end{table}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{@{}rrr@{}}
+\toprule
+\textbf{Samples per job} & \textbf{Taps} & \textbf{Median time (ns)} \\
+\midrule
+256 & 4 & 158,730 \\
+256 & 8 & 279,090 \\
+256 & 16 & 514,050 \\
+256 & 32 & 960,930 \\
+\bottomrule
+\end{tabular}
+\caption{M4 execution time with varying tap counts and 256 samples per job.}
+\label{tab:m4-fir-taps}
+\end{table}
+
+At eight taps, doubling the sample count approximately doubled execution
+time (Table~\ref{tab:m4-fir-samples}). With 256 samples, increasing the tap
+count from four to 32 increased execution time by approximately
+$6.05\times$ (Table~\ref{tab:m4-fir-taps}). This is consistent with increasing
+filtering work alongside fixed per-sample overhead and fewer active taps
+near the zero-padded beginning of each block. These measurements establish
+initial job costs for varying granularity and computation per output;
+M0+ timings and dispatch-overhead measurements will be needed to evaluate
+scheduler assignment decisions.
+
+\section{Challenges and Remaining Unknowns}
+We initially chose the PSoC 6 because of prior familiarity and its
+heterogeneous multicore architecture, which fit our project requirements.
+Despite this, we encountered unexpected issues with the hardware. In the basic Hello World demo to first test our board, we encountered corrupted or missing UART output, which would later become a problem in attempting to establish a debugging interface (which would be through UART with the computer's serial terminal). We checked serial settings and verified firmware execution in the debugger, then used a TX/RX loopback test to confirm that the computer-to-KitProg serial bridge worked. With directed jumper tests, we were able to figure out that the problem lay in the onboard connection between the debugger and the PSoC itself, and we eventually found a workaround solution by bypassing the TX/RX paths using jumper wires, restoring the expected output and behavior upon input. Regardless, establishing a
+working hardware baseline took longer than expected and delayed actual
+scheduler development.
+
+\TODO{List the remaining technical or resource uncertainties and how you
+plan to address them. Identify any questions to discuss with course staff.}
+
+\section{Updated Schedule}
+% Also update the schedule on the main project webpage.
+% The guidelines suggest half-week increments and a named owner for each task.
+% Replace each owner placeholder with Jason, Catherine, or both, as appropriate.
+\begin{table}[H]
+\centering
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.7cm}Y>{\raggedright\arraybackslash}p{2.4cm}@{}}
+\toprule
+\textbf{Date} & \textbf{Task / deliverable} & \textbf{Owner} \\
+\midrule[0.8pt]
+Nov.\ 23--25 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
+\midrule[0.25pt]
+Nov.\ 26--29 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
+\midrule[0.25pt]
+Nov.\ 30--Dec.\ 2 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
+\midrule[0.25pt]
+Dec.\ 3--6 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
+\midrule[0.25pt]
+Dec.\ 7--9 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
+\midrule[0.25pt]
+Dec.\ 10 & \TODO{Final tasks; final report due at 11:59 p.m.} & \TODO{Name.} \\
+\midrule[0.25pt]
+Dec.\ 11 & \TODO{Poster-session preparation and presentation.} & \TODO{Name.} \\
+\bottomrule
+\end{tabularx}
+\caption{Revised plan for the remaining project work.}
+\label{tab:schedule}
+\end{table}
+
+\section{Poster Session Plan}
+\TODO{Describe what you expect to present: performance graphs, an
+architecture diagram, a live demonstration, or other project artifacts.
+Explain what each planned artifact will show.}
+
+% Add references here if the milestone report cites any sources.
+% \begin{thebibliography}{9}
+% \bibitem{reference-key} Author. Title. URL.
+% \end{thebibliography}
+
+% Submission checklist (not part of the report):
+% - Update the schedule on the main project webpage.
+% - Meet with course staff to discuss progress.
+% - Post the milestone report on the project webpage.
+% - Upload the full PDF to Gradescope by November 23, 2026, 11:59 p.m.
+
+\end{document}

@@ -1,7 +1,10 @@
 #include "fir.h"
 
 static const int16_t coefficients[FIR_TAP_COUNT] = {
-    1, 2, 3, 4, 5, 6, 7, 8
+     1,  2,  3,  4,  5,  6,  7,  8,
+     9, 10, 11, 12, 13, 14, 15, 16,
+    17, 18, 19, 20, 21, 22, 23, 24,
+    25, 26, 27, 28, 29, 30, 31, 32
 };
 
 void fir_generate_input(int16_t *input, size_t sample_count)
@@ -33,11 +36,14 @@ void fir_filter_block(const int16_t *input, int32_t *output,
 
 bool fir_self_test(void)
 {
-    static const int16_t input[] = {
-        1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0
-    };
+    static const int16_t input[36] = {1, 2, 3, 4};
+
     static const int32_t expected[] = {
-        1, 4, 10, 20, 30, 40, 50, 60, 61, 52, 32, 0
+        1,   4,  10,  20,  30,  40,  50,  60,
+        70,  80,  90, 100, 110, 120, 130, 140,
+        150, 160, 170, 180, 190, 200, 210, 220,
+        230, 240, 250, 260, 270, 280, 290, 300,
+        277, 220, 128,   0
     };
     static const int16_t zero_input[sizeof(input) / sizeof(input[0])] = {0};
     static const int16_t negative_input[] = {-1, -2, -3, -4};
@@ -58,7 +64,7 @@ bool fir_self_test(void)
         }
     }
 
-    /* Check that every output is overwritten, including after a nonzero job. */
+    /* every output should have missing teams*/
     fir_filter_block(zero_input, actual, count);
     for (size_t i = 0U; i < count; ++i)
     {

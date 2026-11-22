@@ -27,16 +27,81 @@ After programming the whole application, inspect the following CM4 symbols:
 
 | Symbol | Expected after successful startup |
 | --- | --- |
-| `cm4_fir_status` | `1` = passed; `0` = not finished; `2` = failed |
+| `cm4_fir_status` | `1` = passed; `0` = not finished; `2` = filter check or timer setup failed |
 | `cm4_fir_jobs_completed` | `1` |
 | `cm4_fir_checksum` | `-19014` |
 | `cm4_fir_input` | The generated 256-sample input buffer |
 | `cm4_fir_output` | The 256 filtered output values |
+| `cm4_fir_timer_ready` | `1` = TCPWM timer is running |
+| `cm4_core_clock_hz` | Configured M4 clock frequency, in Hz |
+| `cm4_timer_clock_hz` | TCPWM tick frequency, in Hz |
+| `cm4_fir_ticks` | Elapsed timer ticks for one filter call (not CPU cycles) |
+| `cm4_fir_time_ns` | Elapsed time in nanoseconds (integer, rounded down) |
 
-The M4's red LED blinks after the checks pass and stays on if a check fails.
-The M0+'s green LED continues blinking independently. No UART is needed.
+The M4's red LED blinks after the checks pass and stays on if a filter check or timer setup fails.
+The M0+'s green LED continues blinking independently. UART is optional for
+viewing results; the debugger symbols remain available.
 Filtering runs once at startup; the later LED loop does not rerun it.
-Execution-time measurement and scheduling are not part of this step.
+TCPWM0 counter 0 is a free-running 32-bit up counter with period
+`UINT32_MAX`. M4 initializes it once, using 16-bit peripheral divider 0
+set to /1 and a TCPWM prescaler of /1. These resources are dedicated to
+benchmark timing; do not assign them to another peripheral or configure
+them independently on the other core. The current BSP does not use them.
+No timer interrupts, external pins, or Device Configurator changes are needed.
+
+The counter measures the filter call, including call and timing-boundary
+overhead. Input generation, self-tests, checksum, time conversion, and LED
+delays are outside the timed interval. The conversion is
+`time_ns = ticks * 1,000,000,000 / timer_clock_hz`. The timer frequency is
+read from the peripheral clock configuration and need not equal the M4 clock.
+`cm4_fir_ticks` replaces the previous DWT result `cm4_fir_cycles`.
+
+Let the measured call run without stepping or breakpoints; pause in the
+heartbeat loop afterward to inspect the results. Reset the whole board to
+repeat the startup measurement and initialization. This is one measurement
+after the self-tests, not a cold-cache measurement or a distribution over
+repeated trials. Interrupts remain enabled, and the M0+ heartbeat remains
+active. Record the build configuration and both clock frequencies when
+comparing results. Each measurement must take fewer than 2^32 timer ticks
+(the wrap interval is `2^32 / timer_clock_hz` seconds).
+
+The timer stays running after the job. Later, M0+ can read this same hardware
+counter after initialization is coordinated; it must not reset or
+reinitialize the timebase. M0+ timing and cross-core readiness signaling are
+not implemented yet. If ownership moves to M0+, initialize it there before
+starting M4 and remove initialization from M4.
+
+Timer reference: [Infineon TCPWM counter APIs](https://infineon.github.io/psoc6pdl/pdl_api_reference_manual/html/group__group__tcpwm__functions__counter.html).
+Scheduling is not part of this step.
+
+## Serial benchmark output
+
+After the job and checks finish, M4 initializes the board's debug UART
+(P5_1 TX / P5_0 RX) and prints the saved results once. Open the KitProg
+serial port at **115200 baud, 8 data bits, no parity, 1 stop bit, no flow
+control**, then reset the whole board. Keep the working UART bypass jumper
+connections if your board still needs them. No keyboard input is required.
+
+The two-line summary includes samples, taps, status (`1` = passed), timer
+readiness (`1`), checksum (`-19014`), M4 and timer frequencies, elapsed timer
+ticks, duration in nanoseconds, and requested baud rate (115200). UART initialization,
+formatting, and blocking transmission all happen after the measurement;
+they do not rerun or enter the timed filter interval.
+
+The code uses `cy_retarget_io_init_fc(...)` and ordinary `printf()` calls,
+matching the Hello World setup. The dependency is pinned to retarget-io
+`release-v1.11.0`, the version already used by that demo. After a fresh
+checkout, run `make getlibs` from the `scheduler` directory (or use Library
+Manager to fetch dependencies) before building. Downloaded library files
+stay outside the source commit; the dependency reference and version lock
+belong in the commit.
+
+The timer's PDL-managed divider is reserved in HAL before retarget-io
+chooses a different UART divider. M4 alone owns UART. This is one report
+per reset, not continuous output from the LED loop. If no output appears,
+inspect `cm4_uart_ready` (expected `1`) and `cm4_uart_result` (expected `0`,
+UART initialization succeeded) in the debugger. Successful initialization
+or printing does not verify the physical jumper connection.
 
 ## Dual-core heartbeat test (CY8CPROTO-063-BLE)
 
@@ -49,7 +114,7 @@ Each core drives a different onboard LED through PDL GPIO APIs:
 
 The CM0+ initializes the board and starts the CM4 using the template's
 existing boot sequence. Both cores then blink independently. UART jumpers
-and a serial monitor are not needed for this test. The LEDs are active low.
+and a serial monitor are not needed to observe the LED heartbeats. The LEDs are active low.
 
 From this `scheduler` directory, use `make build` to build both images and
 `make program` to build/program the dual-core application. Program the whole
