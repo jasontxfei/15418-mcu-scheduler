@@ -12,9 +12,20 @@ The site uses plain HTML and default browser styling. No CSS, JavaScript, depend
 
 ## Firmware benchmark
 
-The `jason/sequential-baseline` branch contains the general FIR API and an
-optimized M4-only batch benchmark. See [scheduler/BENCHMARK.md](scheduler/BENCHMARK.md)
-for setup, correctness checks, measurement boundaries, and reproduction.
+The `jason/cross-core-dispatch` branch adds a shared-memory M4-to-M0+ job path
+and retains the optimized M4-only benchmark. Start with
+[the runtime plan](scheduler/PLAN.md), which distinguishes completed work from
+the planned mixed workloads, profiled greedy static assignment, work stealing,
+cost-aware scheduling, and dependency graphs.
+
+- [Sequential FIR reference](scheduler/BENCHMARK.md): operation semantics,
+  strongest tested M4 baseline, and reproduction.
+- [Cross-core dispatch](scheduler/DISPATCH.md): ownership, memory layout,
+  interrupt wakeup, correctness checks, and handoff timing.
+
+The runtime accepts explicit jobs from the application; it will not automatically
+parallelize arbitrary programs. The current cross-core prototype has one slot
+and waits for each completion. A bounded queue and concurrent execution are next.
 
 ## Edit
 

@@ -39,6 +39,10 @@
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
 
+#if MCU_DISPATCH_BENCHMARK
+#include "dispatch_benchmark.h"
+int main(void) { return dispatch_benchmark_main(); }
+#else
 #include "cy_pdl.h"
 #include "cybsp.h"
 #include "fir.h"
@@ -304,3 +308,5 @@ failed:
     bench_status = 3U;
     for (;;) __WFI();
 }
+
+#endif

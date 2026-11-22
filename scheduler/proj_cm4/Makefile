@@ -65,14 +65,14 @@ CORE_NAME=CM4_0
 # tree for source code and builds it. The SOURCES variable can be used to
 # manually add source code to the build process from a location not searched
 # by default, or otherwise not found by the build system.
-SOURCES=../shared/fir.c
+SOURCES=../shared/fir.c $(if $(filter dispatch,$(APP_MODE)),../shared/job_mailbox.c)
 
 # Like SOURCES, but for include directories. Value should be paths to
 # directories (without a leading -I).
 INCLUDES=../shared
 
 # Add additional defines to the build process (without a leading -D).
-DEFINES=
+DEFINES=MCU_DISPATCH_BENCHMARK=$(if $(filter dispatch,$(APP_MODE)),1,0)
 
 # Select softfp or hardfp floating point. Default is softfp.
 VFP_SELECT=

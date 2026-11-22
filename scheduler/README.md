@@ -1,6 +1,18 @@
-# PSoC&trade; 6 MCU: Dual-CPU empty application template
+# PSoC 6 task runtime and benchmarks
 
-This is a minimal starter dual-CPU application template for PSoC&trade; 6 MCU devices.
+Project code built on Infineon's dual-CPU application template.
+
+## Runtime plan and current scope
+
+Read [PLAN.md](PLAN.md) for the mixed-workload plan and makespan scheduling
+baseline. The current implementation has general FIR kernels, the sequential
+reference, and a one-slot cross-core transport. Queues, the threshold operation,
+greedy assignment, stealing, and dependency scheduling remain planned.
+
+[DISPATCH.md](DISPATCH.md) explains M4 submission, M0+ wake/execution, shared
+SRAM ownership, tests, and timing; its captured results are in
+[benchmarks/dispatch-results.json](benchmarks/dispatch-results.json). Build that application with
+`APP_MODE=dispatch`; the default remains `APP_MODE=sequential`.
 
 ## Current benchmark: general FIR on M4
 
@@ -17,8 +29,9 @@ boundaries, clock settings, tests, and reproduction commands. The API is in
 
 Results are read through KitProg after the benchmark finishes. Both cores
 sleep afterward, so blinking LEDs or serial output are not expected. A board
-reset reruns the benchmark. No scheduler or cross-core filtering is implemented
-yet. The earlier M0+ bring-up benchmark remains in Git history.
+reset reruns the benchmark. Cross-core filtering is available separately in
+dispatch mode; neither mode yet performs useful filtering on both cores
+concurrently. The earlier M0+ bring-up benchmark remains in Git history.
 
 The original Infineon template documentation follows for reference.
 

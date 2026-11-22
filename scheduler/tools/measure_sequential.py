@@ -128,9 +128,9 @@ def main():
         out = root / opt
         out.mkdir(exist_ok=True)
         print('Building', opt, flush=True)
-        run(['make', 'build', '-j4', 'BENCH_OPT=-'+opt], out/'build.log')
+        run(['make', 'build', '-j4', 'BENCH_OPT=-'+opt, 'APP_MODE=sequential'], out/'build.log')
         print('Programming', opt, flush=True)
-        run(['make', 'program', 'BENCH_OPT=-'+opt], out/'program.log', timeout=180)
+        run(['make', 'program', 'BENCH_OPT=-'+opt, 'APP_MODE=sequential'], out/'program.log', timeout=180)
         image = PROJECT / 'build/app_combined.hex'
         # Archive the exact flashed image and source identity with every run.
         (out/'app_combined.hex').write_bytes(image.read_bytes())

@@ -67,7 +67,9 @@ MEMORY
      */
     /* 16 KB for the M0+ benchmark, paired with the M4 RAM origin below. */
     ram               (rwx)   : ORIGIN = 0x08000000, LENGTH = 0x04000
-    flash             (rx)    : ORIGIN = 0x10000000, LENGTH = 0x4400
+    /* Shared application mailbox: identical NOLOAD region in both images. */
+    runtime_shared    (rwx)   : ORIGIN = 0x08043800, LENGTH = 0x4000
+    flash             (rx)    : ORIGIN = 0x10000000, LENGTH = 0x8000
 
     /* This is a 32K flash region used for EEPROM emulation. This region can also be used as the general purpose flash.
      * You can assign sections to this memory region for only one of the cores.
@@ -125,6 +127,15 @@ GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 SECTIONS
 {
+    .runtime_shared (NOLOAD) : ALIGN(8)
+    {
+        __runtime_shared_start__ = .;
+        KEEP(*(.runtime_shared))
+        __runtime_shared_end__ = .;
+    } > runtime_shared
+    ASSERT(SIZEOF(.runtime_shared) <= LENGTH(runtime_shared), "runtime mailbox overflow")
+    ASSERT(ADDR(.runtime_shared) == 0x08043800, "runtime mailbox address mismatch")
+
     .cy_app_header :
     {
         KEEP(*(.cy_app_header))

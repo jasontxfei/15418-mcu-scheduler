@@ -1,7 +1,9 @@
 # Sequential general FIR benchmark
 
-This branch establishes a measured M4-only reference before adding a scheduler.
-It has no task queue, dependencies, work stealing, or cross-core filtering yet.
+`APP_MODE=sequential` establishes the M4-only reference before adding a scheduler.
+It has no task queue, dependencies, or work stealing. The separate
+`APP_MODE=dispatch` prototype tests a single remote job; see [DISPATCH.md](DISPATCH.md).
+The mixed-workload and scheduling roadmap is in [PLAN.md](PLAN.md).
 
 ## Work and integer semantics
 
@@ -91,7 +93,7 @@ are passed to both core projects. The default is `-O2`.
 
 ## Use in the later parallel comparison
 
-The November 22 hardware sweep tested both clocks, all three compiler options,
+The November 22 hardware sweep at commit `1017bce` tested both clocks, all three compiler options,
 and both kernels: 240 configurations with 31 fully verified trials each.
 M4 at 150 MHz with the DSP kernel and `-O2` had the lowest median time in every
 one of the 20 workloads. It is the default sequential reference. For example,
@@ -99,7 +101,10 @@ one of the 20 workloads. It is the default sequential reference. For example,
 per batch (50.4 microseconds per job). See
 [benchmarks/sequential-results.json](benchmarks/sequential-results.json) for
 all raw ticks, timing ranges, and the complete comparison matrix. These are
-sequential measurements; they do not establish a parallel speedup.
+sequential measurements; they do not establish a parallel speedup. The later
+cross-core branch reserves shared SRAM and changes the firmware flash boundary;
+remeasure the reference when comparing that build rather than treating these
+historical times as immutable across layouts and compiler changes.
 
 The primary speedup numerator is the fastest measured correct sequential
 configuration for the same batch. This is the best of the tested kernels and

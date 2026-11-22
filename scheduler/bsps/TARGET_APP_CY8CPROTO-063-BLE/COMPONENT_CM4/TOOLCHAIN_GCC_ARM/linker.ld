@@ -65,7 +65,9 @@ MEMORY
      * where 'xx' is the device group; for example, 'cy8c6xx7_cm0plus.ld'.
      */
     /* Start after M0+'s 16 KB; preserve the reserved top 2 KB of SRAM. */
-    ram               (rwx)   : ORIGIN = 0x08004000, LENGTH = 0x043800
+    ram               (rwx)   : ORIGIN = 0x08004000, LENGTH = 0x03F800
+    /* Shared application mailbox: identical NOLOAD region in both images. */
+    runtime_shared    (rwx)   : ORIGIN = 0x08043800, LENGTH = 0x4000
     flash             (rx)    : ORIGIN = 0x10000000, LENGTH = 0x100000
 
     /* This is a 32K flash region used for EEPROM emulation. This region can also be used as the general purpose flash.
@@ -86,7 +88,7 @@ MEMORY
 }
 
 /* Size and start address of the Cortex-M0+ application image */
-FLASH_CM0P_SIZE  = 0x4400;
+FLASH_CM0P_SIZE  = 0x8000;
 FLASH_CM0P_START = ORIGIN(flash);
 /* Size and start address of the Cortex-M4 application image */
 FLASH_CM4_SIZE   = LENGTH(flash) - FLASH_CM0P_SIZE;
@@ -131,6 +133,15 @@ GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 SECTIONS
 {
+    .runtime_shared (NOLOAD) : ALIGN(8)
+    {
+        __runtime_shared_start__ = .;
+        KEEP(*(.runtime_shared))
+        __runtime_shared_end__ = .;
+    } > runtime_shared
+    ASSERT(SIZEOF(.runtime_shared) <= LENGTH(runtime_shared), "runtime mailbox overflow")
+    ASSERT(ADDR(.runtime_shared) == 0x08043800, "runtime mailbox address mismatch")
+
      /* Cortex-M0+ application image */
     .cy_m0p_image FLASH_CM0P_START :
     {

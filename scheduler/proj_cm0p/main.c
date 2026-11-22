@@ -42,6 +42,17 @@
 #include "cy_pdl.h"
 #include "cybsp.h"
 
+#if MCU_DISPATCH_BENCHMARK
+#include "job_mailbox.h"
+int main(void)
+{
+    if (cybsp_init() != CY_RSLT_SUCCESS) for (;;) {}
+    if (!job_worker_init()) for (;;) {}
+    __enable_irq();
+    Cy_SysEnableCM4(CY_CORTEX_M4_APPL_ADDR);
+    job_worker_loop();
+}
+#else
 volatile uint32_t baseline_m0_ready = 0U;
 volatile uint32_t baseline_m0_clock_hz = 0U;
 
@@ -56,3 +67,5 @@ int main(void)
     /* CPU sleep, not system deep sleep: the M4 and TCPWM must keep running. */
     for (;;) __WFI();
 }
+
+#endif

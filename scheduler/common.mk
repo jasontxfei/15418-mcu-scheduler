@@ -55,4 +55,10 @@ CONFIG=Custom
 # Compare with BENCH_OPT=-Os / -O2 / -O3. No LTO or fast-math.
 BENCH_OPT ?= -O2
 
+# sequential retains the M4-only reference; dispatch runs the IPC bring-up.
+APP_MODE ?= sequential
+ifneq ($(filter $(APP_MODE),sequential dispatch),$(APP_MODE))
+$(error APP_MODE must be sequential or dispatch)
+endif
+
 include ../common_app.mk
