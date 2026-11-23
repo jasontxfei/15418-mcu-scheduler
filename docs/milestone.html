@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Milestone Report: Heterogeneous Embedded MCU Scheduler</title>
+</head>
+<body>
+  <h1>Workload- and Memory-Aware Scheduler for Heterogeneous Embedded MCU Cores</h1>
+  <h2>Milestone Report</h2>
+  <p>Jason Tang (jasont2) and Catherine Li (catheri5)<br>November 23, 2026</p>
+  <p><a href="index.html">Project homepage</a> | <a href="milestone.pdf">PDF</a> | <a href="milestone.tex">LaTeX source</a></p>
+<p><strong>Project URL:</strong> <a
+href="https://jasontxfei.github.io/15418-mcu-scheduler/"
+class="uri">https://jasontxfei.github.io/15418-mcu-scheduler/</a><br />
+<em>Progress and measurements current through November 22,
+2026.</em></p>
+<h2 id="progress-so-far">Progress So Far</h2>
+<p>Since the proposal, we have brought up the dual-core PSoC 6,
+implemented integer FIR filtering with runtime-supplied coefficients,
+and profiled scalar and DSP/unrolled kernels. A FIR job filters an
+independent block with zero initial history; its tap count is the number
+of coefficients used per output. Infineon supplies startup, timer, and
+IPC drivers. The filtering kernels, job ownership protocol, and batch
+execution are project code.</p>
+<p>We implemented a single-job cross-core handoff and a naive concurrent
+baseline. Both cores claim the next unclaimed job, release the hardware
+lock, and compute independently; M4 does useful work while M0+ runs.
+Full-output checks, completion counts, guards, and separate timing
+traces validate execution. The runtime supports up to 32 preloaded FIR
+jobs in 16 KiB of shared storage. Threshold operations, general
+enqueueing, dependencies, profiled static assignment, and work stealing
+remain planned.</p>
+<h2 id="status-of-proposed-goals">Status of Proposed Goals</h2>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th><strong>Goal</strong></th>
+<th><strong>Completed</strong></th>
+<th><strong>Remaining</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runtime</td>
+<td>Concurrent bounded FIR batches; shared
+ownership and completion.</td>
+<td>General operation interface, profiled
+static, stealing, cost-aware policy, small DAG.</td>
+</tr>
+<tr>
+<td>Profiling</td>
+<td>Per-core FIR kernels, two clock settings,
+and IPC handoff measured.</td>
+<td>Threshold costs, prediction error, and
+concurrent memory behavior.</td>
+</tr>
+<tr>
+<td>Benchmarks</td>
+<td>25 uniform, tiny, and mixed-size/tap FIR
+workloads.</td>
+<td>Mixed operation types; controlled
+imbalance and dependencies.</td>
+</tr>
+<tr>
+<td>Evaluation</td>
+<td>Matched M4-only baseline, full-output
+checks, job counts, overlap traces.</td>
+<td>Policy comparisons, useful/idle time, and
+runtime memory accounting.</td>
+</tr>
+<tr>
+<td>Analysis</td>
+<td>Naive placement can lose despite real core
+overlap.</td>
+<td>Separate placement, synchronization,
+contention, and prediction effects.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>We are behind the proposal’s original scheduling-policy timeline: the
+Nov. 16–22 plan included weighted static assignment and dependencies,
+which are still unfinished. Hardware bring-up took longer than expected.
+We now have a verified concurrent baseline and a clearer experimental
+target. The revised plan prioritizes the single-board policy comparison;
+two-board work and broad streaming/jitter experiments are deferred.</p>
+<h2 id="updated-goals-and-deliverables">Updated Goals and
+Deliverables</h2>
+<p><strong>Plan to achieve.</strong> Support FIR and threshold jobs,
+per-core profiling, profiled greedy static assignment, work stealing,
+and a cost-aware policy. Compare these with naive greedy and optimized
+M4-only execution on identical batches. Validate a small
+FIR-to-threshold dependency graph and report makespan, correctness, core
+utilization, scheduling cost, and memory use. Applications explicitly
+expose jobs and dependencies; automatic parallelization of arbitrary
+programs is outside scope.</p>
+<p><strong>Hope to achieve.</strong> Extend dependency shapes, test
+controlled cost-model errors or arrival jitter, and investigate
+batching. Two-board SPI/UART work remains a stretch goal only after the
+single-board evaluation is complete.</p>
+<p><strong>Fallback.</strong> Keep independent FIR/threshold jobs, fixed
+calibration, bounded storage, and the static-versus-dynamic comparison.
+Reduce graph and streaming scope before weakening correctness or
+experimental controls.</p>
+<h2 id="preliminary-results">Preliminary Results</h2>
+<h3 id="experimental-setup">Experimental Setup</h3>
+<p>With Arm GCC 14.2.1 (<code>-O2</code>), we measure 31 trials per
+workload, mode, and clock setting after three warmups. Scalar and
+DSP/unrolled variants are tested on each core; choices are fixed before
+parallel trials. The assignment rule itself uses no cost estimates. A
+common hardware TCPWM counter measures elapsed time using its configured
+frequency. On this board, M4 at 150 MHz requires M0+ and peripherals at
+75 MHz; both cores can instead run at 100 MHz.<a href="#fn1"
+class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>The M4-only reference makes direct filter calls over the same shared
+buffers, without queue locks or worker wakeup. Parallel timing includes
+ready-list initialization, publication, IPC wakeup, claiming, execution,
+and completion waiting. Input/plan preparation and correctness checks
+are outside both timers. Per-job timestamps are enabled only in separate
+diagnostic batches.</p>
+<h3 id="naive-greedy-versus-optimized-sequential-execution">Naive Greedy
+Versus Optimized Sequential Execution</h3>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th><strong>Jobs <span
+class="math inline">×</span> samples</strong></th>
+<th><strong>Taps</strong></th>
+<th><strong>M4-only</strong></th>
+<th><strong>Greedy</strong></th>
+<th><strong>Speedup</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span
+class="math inline">32 × 64</span></td>
+<td>8</td>
+<td>436.51</td>
+<td>497.63</td>
+<td><span
+class="math inline">0.88×</span></td>
+</tr>
+<tr>
+<td><span
+class="math inline">8 × 256</span></td>
+<td>8</td>
+<td>403.71</td>
+<td>611.07</td>
+<td><span
+class="math inline">0.66×</span></td>
+</tr>
+<tr>
+<td><span
+class="math inline">2 × 1024</span></td>
+<td>8</td>
+<td>395.51</td>
+<td>1171.04</td>
+<td><span
+class="math inline">0.34×</span></td>
+</tr>
+<tr>
+<td><span
+class="math inline">32 × 1</span></td>
+<td>8</td>
+<td>17.12</td>
+<td>52.61</td>
+<td><span
+class="math inline">0.33×</span></td>
+</tr>
+<tr>
+<td>32 mixed-size jobs</td>
+<td>8</td>
+<td>411.97</td>
+<td>417.76</td>
+<td><span
+class="math inline">0.99×</span></td>
+</tr>
+<tr>
+<td>32 mixed-size jobs</td>
+<td>32</td>
+<td>1405.89</td>
+<td>1274.81</td>
+<td><span
+class="math inline">1.10×</span></td>
+</tr>
+<tr>
+<td>32 mixed-size jobs</td>
+<td>Mixed</td>
+<td>508.56</td>
+<td>566.93</td>
+<td><span
+class="math inline">0.90×</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><span><em>Representative whole-batch medians in microseconds: M4-only
+at 150 MHz versus greedy with M4 at 150 MHz and M0+ at 75 MHz. Speedup
+is sequential time divided by parallel time; below 1 is a slowdown.
+Mixed-size cases repeat 16/32/64/128 samples; the final row also varies
+taps.</em></span></p>
+<p>Across 25 workloads, greedy beat the fastest tested M4-only
+configuration in 2 cases; the best median speedup was about <span
+class="math inline">1.10×</span>. At a fixed 100/100 MHz, it beat
+M4-only at 100 MHz in 19 cases, but those gains must not be presented as
+beating the faster 150 MHz sequential reference. Separate traces
+confirmed kernel overlap in all 50 traced batches. Across both accepted
+clock sweeps, 8560 batches and 139,668 job executions passed checks,
+including warmups and calibration. The earlier single-slot NOOP handoff
+measured about 5.88 <span class="math inline"><em>μ</em></span>s round
+trip at 150/75 MHz.<a href="#fn2" class="footnote-ref" id="fnref2"
+role="doc-noteref"><sup>2</sup></a></p>
+<h2 id="challenges-and-remaining-unknowns">Challenges and Remaining
+Unknowns</h2>
+<p>Initial bring-up required UART-path diagnosis and a TX/RX jumper
+workaround, as recorded in our earlier project notes. Our current
+measurements use KitProg debugger extraction after execution, so timing
+does not depend on serial output. Earlier large-block tests also
+required increasing M0+’s private SRAM allocation from 12 to 16 KiB and
+updating both linkers.</p>
+<p>The current shared batch occupies 15,684 bytes, including sample
+buffers, coefficient plans, and test guards; this is not all scheduler
+overhead. General buffers and dependency lifetimes still need careful
+design. We also need to separate queue/wake costs, kernel asymmetry, and
+concurrent memory contention. Representative traces show M4 finishing
+while a longer M0+ job remains. The results do not yet isolate every
+cause of slowdown; we will test whether core-specific execution costs
+improve placement. We plan to ask staff whether the revised
+independent-job policy comparison plus a small dependency graph is an
+appropriate remaining scope.</p>
+<h2 id="updated-schedule">Updated Schedule</h2>
+<p>All remaining tasks are shared by Jason Tang and Catherine Li.</p>
+<div class="center">
+<table>
+<thead>
+<tr>
+<th><strong>Date</strong></th>
+<th><strong>Task / deliverable</strong></th>
+<th><strong>Owners</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nov. 23</td>
+<td>Finalize and review the report and project
+site; discuss progress with staff and submit the full PDF.</td>
+<td>Jason and Catherine</td>
+</tr>
+<tr>
+<td>Nov. 23–25</td>
+<td>Generalize operation descriptors;
+implement and verify threshold; profile both operations on each
+core.</td>
+<td>Jason and Catherine</td>
+</tr>
+<tr>
+<td>Nov. 26–29</td>
+<td>Implement profiled greedy static
+assignment; build mixed-job batches; validate predictions and
+outputs.</td>
+<td>Jason and Catherine</td>
+</tr>
+<tr>
+<td>Nov. 30–<br />
+Dec. 2</td>
+<td>Implement work stealing and bounded ready
+queues; exercise imbalance and varying sizes; compare static and
+stealing.</td>
+<td>Jason and Catherine</td>
+</tr>
+<tr>
+<td>Dec. 3–6</td>
+<td>Add cost-aware decisions and a small
+FIR-to-threshold graph; measure makespan, idle time, scheduling cost,
+and memory.</td>
+<td>Jason and Catherine</td>
+</tr>
+<tr>
+<td>Dec. 7–9</td>
+<td>Freeze features and fix correctness
+issues; complete repeated experiments and figures; draft
+report/poster.</td>
+<td>Jason and Catherine</td>
+</tr>
+<tr>
+<td>Dec. 10</td>
+<td>Review final claims, figures, and
+reproducibility; submit the final report by 11:59 p.m.</td>
+<td>Jason and Catherine</td>
+</tr>
+<tr>
+<td>Dec. 11</td>
+<td>Prepare the board, architecture
+explanation, and result figures; present the project together.</td>
+<td>Jason and Catherine</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="poster-session-plan">Poster Session Plan</h2>
+<p>We plan to show the core/IPC/queue architecture, an execution
+timeline, and graphs of makespan and speedup across policies and job
+granularity. We will distinguish fixed-clock gains from gains over the
+strongest sequential reference, show slowdowns as well as wins, and
+account for runtime memory. A small live board demonstration is
+optional; the measured evaluation is the primary deliverable.</p>
+<section id="footnotes" class="footnotes footnotes-end-of-document"
+role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1"><p><a
+href="https://www.infineon.com/assets/row/public/documents/30/49/infineon-cyble-416045-02-datasheet-en.pdf">Infineon
+CYBLE-416045-02 datasheet</a>, CPU subsystem.<a href="#fnref1"
+class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p><a
+href="https://github.com/jasontxfei/15418-mcu-scheduler/blob/jason/greedy-baseline/scheduler/benchmarks/greedy-results.json">Complete
+greedy timing matrix, per-trial samples, and traces</a>; <a
+href="https://github.com/jasontxfei/15418-mcu-scheduler/blob/jason/greedy-baseline/scheduler/benchmarks/dispatch-results.json">single-job
+dispatch measurements</a>.<a href="#fnref2" class="footnote-back"
+role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+</body>
+</html>
