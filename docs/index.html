@@ -11,70 +11,41 @@
   <h2>Reports</h2>
   <ul>
     <li>Project proposal: <a href="proposal.html">HTML</a> | <a href="proposal.pdf">PDF</a></li>
-    <li>Milestone report: forthcoming</li>
+    <li>Milestone report: <a href="milestone.html">HTML</a> | <a href="milestone.pdf">PDF</a> | <a href="milestone.tex">LaTeX source</a></li>
     <li>Final report: forthcoming</li>
   </ul>
   <p><a href="https://github.com/jasontxfei/15418-mcu-scheduler">GitHub repository</a></p>
-  <h2>Schedule</h2>
-<table>
+  <h2>Completed through November 23</h2>
+  <ul>
+    <li>Dual-core board bring-up, general FIR kernels, and optimized per-core measurements.</li>
+    <li>Verified shared-memory IPC handoff and bounded concurrent FIR batches with naive greedy assignment.</li>
+    <li>Twenty-five workloads, full-output and ownership checks, and traces confirming real overlap.</li>
+    <li>Greedy beat the fastest tested M4-only reference in 2 of 25 workloads; the milestone report includes slowdowns and the full comparison context.</li>
+  </ul>
+  <p>Threshold jobs, profiled static assignment, work stealing, cost-aware placement, and dependencies remain planned.</p>
+  <h2>Revised schedule</h2>
+  <p>All remaining tasks are shared by Jason Tang and Catherine Li.</p>
+  <table>
 <thead>
-<tr>
-<th scope="col"><strong>Date</strong></th>
-<th scope="col"><strong>Deliverable</strong></th>
-</tr>
+<tr><th scope="col"><strong>Date</strong></th><th scope="col"><strong>Task / deliverable</strong></th><th scope="col"><strong>Owners</strong></th></tr>
 </thead>
 <tbody>
-<tr>
-<td>Nov. 9–15</td>
-<td>Set up both cores; establish M4-only
-benchmarks and initial per-core timing measurements.</td>
-</tr>
-<tr>
-<td>Nov. 16–22</td>
-<td>Implement shared-memory queues,
-completion/dependency tracking, and equal and weighted static
-assignment.</td>
-</tr>
-<tr>
-<td>Nov. 23</td>
-<td>Submit milestone report with preliminary
-measurements and an updated schedule.</td>
-</tr>
-<tr>
-<td>Nov. 23–29</td>
-<td>Implement ordinary and cost-aware work
-stealing; validate correctness across policies.</td>
-</tr>
-<tr>
-<td>Nov. 30–Dec. 6</td>
-<td>Evaluate task sizes, computation
-intensity, memory budgets, and arrival jitter; profile and optimize
-bottlenecks.</td>
-</tr>
-<tr>
-<td>Dec. 7–10</td>
-<td>Complete experiments, figures, and final
-report. Submit the final report by Dec. 10.</td>
-</tr>
-<tr>
-<td>Dec. 11</td>
-<td>Present the project and evaluation at the
-poster session.</td>
-</tr>
+<tr><td>Nov. 23–25</td><td>Generalize operation descriptors; implement and verify threshold; profile both operations on each core.</td><td>Jason and Catherine</td></tr>
+<tr><td>Nov. 26–29</td><td>Implement profiled greedy static assignment; build mixed-job batches; validate predictions and outputs.</td><td>Jason and Catherine</td></tr>
+<tr><td>Nov.&nbsp;30–<br> Dec.&nbsp;2</td><td>Implement work stealing and bounded ready queues; exercise imbalance and varying sizes; compare static and stealing.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 3–6</td><td>Add cost-aware decisions and a small FIR-to-threshold graph; measure makespan, idle time, scheduling cost, and memory.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 7–9</td><td>Freeze features and fix correctness issues; complete repeated experiments and figures; draft report/poster.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 10</td><td>Review final claims, figures, and reproducibility; submit the final report by 11:59 p.m.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 11</td><td>Prepare the board, architecture explanation, and result figures; present the project together.</td><td>Jason and Catherine</td></tr>
 </tbody>
 </table>
-
-<p><em>Stretch work: If core deliverables are complete, investigate
-two-board communication and batched remote job assignment.</em></p>
-
-<p><strong>Key deadlines from the proposal guidelines:</strong></p>
-
-<ul>
-<li><p>Proposal: November 9, 2026, 11:59 p.m.</p></li>
-<li><p>Milestone report: November 23, 2026, 11:59 p.m.</p></li>
-<li><p>Final report: December 10, 2026, 11:59 p.m.</p></li>
-<li><p>Poster session: December 11, 2026.</p></li>
-</ul>
-
+  <p>Stretch work: investigate broader dependency graphs, arrival jitter, and batching after the core single-board evaluation. Two-board SPI/UART work is deferred unless the main deliverables are complete.</p>
+  <h2>Key deadlines</h2>
+  <ul>
+    <li>Proposal: November 9, 2026, 11:59 p.m.</li>
+    <li>Milestone report: November 23, 2026, 11:59 p.m.</li>
+    <li>Final report: December 10, 2026, 11:59 p.m.</li>
+    <li>Poster session: December 11, 2026.</li>
+  </ul>
 </body>
 </html>

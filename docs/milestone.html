@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Milestone Report: Heterogeneous Embedded MCU Scheduler</title>
+</head>
+<body>
+<h1>Workload- and Memory-Aware Scheduler for Heterogeneous Embedded MCU Cores</h1>
+<h2>Milestone Report</h2>
+<p>Jason Tang (jasont2) and Catherine Li (catheri5)<br>November 23, 2026</p>
+<p><a href="index.html">Project homepage</a> | <a href="milestone.pdf">PDF</a> | <a href="milestone.tex">LaTeX source</a></p>
+<p><strong>Project URL:</strong> <a href="https://jasontxfei.github.io/15418-mcu-scheduler/">https://jasontxfei.github.io/15418-mcu-scheduler/</a><br> <em>Progress and measurements current through November 23, 2026.</em></p>
+<h2 id="progress-so-far">Progress So Far</h2>
+<p>Since the proposal, we have brought up the dual-core PSoC 6, implemented integer FIR filtering with runtime-supplied coefficients, and profiled scalar and DSP/unrolled kernels. A FIR job filters an independent block with zero initial history; its tap count is the number of coefficients used per output. Infineon supplies startup, timer, and IPC (inter-processor communication) drivers. The filtering kernels, job ownership protocol, and batch execution are our own implementations.</p>
+<p>We first implemented and verified an FIR filtering kernel on each core and measured its execution time, then implemented a single-job cross-core handoff and a naive concurrent baseline. Both cores claim the next unclaimed job, release the hardware IPC lock, and execute separate filtering jobs concurrently. Full-output checks, completion counts, guards, and separate timing traces validate execution. The runtime supports up to 32 preloaded FIR jobs in 16 KiB of shared storage. Threshold operations, general enqueueing, dependencies, profiled static assignment, and work stealing remain planned areas of exploration.</p>
+<h2 id="status-of-proposed-goals">Status of Proposed Goals</h2>
+<table>
+<thead>
+<tr><th scope="col"><strong>Goal</strong></th><th scope="col"><strong>Completed</strong></th><th scope="col"><strong>Remaining</strong></th></tr>
+</thead>
+<tbody>
+<tr><td>Runtime</td><td>Concurrent bounded FIR batches; shared ownership and completion.</td><td>General operation interface, profiled static, stealing, cost-aware policy, small DAG.</td></tr>
+<tr><td>Profiling</td><td>Scalar and optimized per-core FIR kernel execution costs, clock configurations, and IPC handoff latency measured.</td><td>Threshold costs, prediction error, and concurrent memory behavior.</td></tr>
+<tr><td>Benchmarks</td><td>25 uniform, tiny, and mixed-size/tap FIR workloads.</td><td>Mixed operation types; controlled imbalance and dependencies.</td></tr>
+<tr><td>Evaluation</td><td>Established M4- and M0+-only measurements, full-output checks, job counts, overlap traces.</td><td>Policy comparisons, useful/idle time, and runtime memory accounting.</td></tr>
+<tr><td>Analysis</td><td>Naive placement can lose despite real core execution overlap.</td><td>Separate placement, synchronization, contention, and prediction effects.</td></tr>
+</tbody>
+</table>
+<p>We are behind the proposal&#x27;s original scheduling-policy timeline: the initial Nov. 16–22 plan included weighted static assignment and dependencies, which are still unfinished. Hardware bring-up took longer than expected due to unexpected issues with the UART connection (see below). We now have a verified concurrent baseline and a clearer experimental target. The revised plan prioritizes the single-board policy comparison; two-board work and broad streaming/jitter experiments remain stretch goals.</p>
+<h2 id="updated-goals-and-deliverables">Updated Goals and Deliverables</h2>
+<p><strong>Plan to achieve.</strong> Extend the existing runtime with threshold jobs and profile their per-core costs. Implement profiled static assignment, work stealing, and cost-aware scheduling. Compare these with established naive greedy and optimized M4-only execution on identical batches. Validate a small FIR-to-threshold dependency graph and report makespan, correctness, core utilization, scheduling cost, and memory use.</p>
+<p><strong>Hope to achieve.</strong> Extend dependency shapes, test controlled cost-model errors or arrival jitter, and investigate batching. Two-board SPI/UART work remains a stretch goal only after the single-board evaluation is complete.</p>
+<p><strong>Fallback.</strong> Keep independent FIR/threshold jobs, fixed calibration, bounded storage, and the static-versus-dynamic comparison. Reduce graph and streaming scope before weakening correctness or experimental controls.</p>
+<h2 id="preliminary-results">Preliminary Results</h2>
+<h3 id="experimental-setup">Experimental Setup</h3>
+<p>With Arm GCC 14.2.1 (<code>-O2</code>), we measure 31 trials per workload, mode, and clock setting after three warmups. Scalar and DSP/unrolled variants are tested on each core; choices are fixed before parallel trials. The assignment rule itself uses no cost estimates. A common on-board TCPWM counter measures elapsed time using its configured frequency. We evaluated two clock configurations: M4 at 150 MHz which required M0+ to be at 75 MHz, and both cores at 100 MHz.</p>
+<p>The M4-only reference makes direct filter calls over the same shared buffers, without work queue locks or worker wakeup. Parallel timing includes ready-list initialization, publication, IPC wakeup, claiming, execution, and completion waiting. Input/plan preparation and correctness checks are outside both timers. Per-job timestamps are enabled only in separate diagnostic batches.</p>
+<h3 id="initial-per-core-assessment">Initial Per-Core Assessment</h3>
+<p>At 100 MHz on both cores, we separately profiled eight 256-sample, eight-tap FIR jobs per trial. Values below are medians of summed FIR-call intervals, excluding dispatch and queue handling but retaining timer/barrier and call-selection overhead.</p>
+<table>
+<thead>
+<tr><th scope="col"><strong>Core</strong></th><th scope="col"><strong>Scalar (<span class="math inline">µ</span>s)</strong></th><th scope="col"><strong>DSP/unrolled (<span class="math inline">µ</span>s)</strong></th></tr>
+</thead>
+<tbody>
+<tr><td>M4</td><td>1442.56</td><td>606.16</td></tr>
+<tr><td>M0+</td><td>2469.75</td><td>1740.61</td></tr>
+</tbody>
+</table>
+<p>M4 uses DSP instructions (<code>SMLADX</code>); M0+ uses portable unrolling. Optimized M0+ execution took about <span class="math inline">2.87×</span> as long as the M4, motivating per-core cost estimates.</p>
+<h3 id="naive-greedy-versus-optimized-sequential-execution">Naive Greedy Versus Optimized Sequential Execution</h3>
+<table>
+<thead>
+<tr><th scope="col"><strong>Jobs <span class="math inline">×</span> samples</strong></th><th scope="col"><strong>Taps</strong></th><th scope="col"><strong>M4-only</strong></th><th scope="col"><strong>Greedy</strong></th><th scope="col"><strong>Speedup</strong></th></tr>
+</thead>
+<tbody>
+<tr><td><span class="math inline">32×64</span></td><td>8</td><td>436.51</td><td>497.63</td><td><span class="math inline">0.88×</span></td></tr>
+<tr><td><span class="math inline">8×256</span></td><td>8</td><td>403.71</td><td>611.07</td><td><span class="math inline">0.66×</span></td></tr>
+<tr><td><span class="math inline">2×1024</span></td><td>8</td><td>395.51</td><td>1171.04</td><td><span class="math inline">0.34×</span></td></tr>
+<tr><td><span class="math inline">32×1</span></td><td>8</td><td>17.12</td><td>52.61</td><td><span class="math inline">0.33×</span></td></tr>
+<tr><td>32 mixed-size jobs</td><td>8</td><td>411.97</td><td>417.76</td><td><span class="math inline">0.99×</span></td></tr>
+<tr><td>32 mixed-size jobs</td><td>32</td><td>1405.89</td><td>1274.81</td><td><span class="math inline">1.10×</span></td></tr>
+<tr><td>32 mixed-size jobs</td><td>Mixed</td><td>508.56</td><td>566.93</td><td><span class="math inline">0.90×</span></td></tr>
+</tbody>
+</table>
+<p><em>Representative whole-batch medians in microseconds: M4-only at 150 MHz versus greedy with M4 at 150 MHz and M0+ at 75 MHz. <math xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mtext>Speedup =</mtext><mfrac><mtext>sequential (M4-only) time</mtext><mtext>parallel (greedy) time</mtext></mfrac></mrow></math>. Mixed-size cases repeat 16/32/64/128 samples; the final row also varies taps.</em></p>
+<p>Across 25 workloads, the 150-MHz M4 and 75-MHz M0+ configuration of the greedy scheduler beat the fastest tested M4-only configuration (150 MHz) in only 2 cases, with a best median speedup of approximately <span class="math inline">1.10×</span>. With both cores at 100 MHz, it beat M4-only at 100 MHz in 19 cases. Separate traces confirmed kernel overlap in all 50 traced batches. Across both accepted clock sweeps, 8560 batches and 139,668 job executions passed checks, including warmups and calibration. The earlier single-slot NOOP handoff measured about 5.88&thinsp;<span class="math inline">µ</span>s round trip at 150/75 MHz.</p>
+<h2 id="challenges-and-remaining-unknowns">Challenges and Remaining Unknowns</h2>
+<p>Initial bring-up required hardware UART-path diagnosis and a TX/RX jumper cable workaround, intended to ease debugging later on; this unforeseen issue led to delays. The measurements included in this report use KitProg debugger extraction rather than prints after execution, so timing does not depend on serial output. Earlier large-block tests also required increasing M0+&#x27;s private SRAM allocation from 12 to 16 KiB and updating both linkers.</p>
+<p>The current shared batch occupies 15,684 bytes, including sample buffers, coefficient plans, and test guards; this is not all scheduler overhead. General buffers and dependency lifetimes/safe reuse still need to be carefully designed. We also need to distinguish queue/wake costs, differences in core processing speeds, and contention for shared-memory bandwidth. Current representative traces show M4 finishing and waiting while a longer M0+ job remains executing. The results do not yet isolate every cause of slowdown, so we will test whether assigning jobs based on core-specific execution costs improves overall completion time.</p>
+<h2 id="updated-schedule">Updated Schedule</h2>
+<p>All remaining tasks are shared by Jason Tang and Catherine Li.</p>
+<table>
+<thead>
+<tr><th scope="col"><strong>Date</strong></th><th scope="col"><strong>Task / deliverable</strong></th><th scope="col"><strong>Owners</strong></th></tr>
+</thead>
+<tbody>
+<tr><td>Nov. 23–25</td><td>Generalize operation descriptors; implement and verify threshold; profile both operations on each core.</td><td>Jason and Catherine</td></tr>
+<tr><td>Nov. 26–29</td><td>Implement profiled greedy static assignment; build mixed-job batches; validate predictions and outputs.</td><td>Jason and Catherine</td></tr>
+<tr><td>Nov.&nbsp;30–<br> Dec.&nbsp;2</td><td>Implement work stealing and bounded ready queues; exercise imbalance and varying sizes; compare static and stealing.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 3–6</td><td>Add cost-aware decisions and a small FIR-to-threshold graph; measure makespan, idle time, scheduling cost, and memory.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 7–9</td><td>Freeze features and fix correctness issues; complete repeated experiments and figures; draft report/poster.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 10</td><td>Review final claims, figures, and reproducibility; submit the final report by 11:59 p.m.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 11</td><td>Prepare the board, architecture explanation, and result figures; present the project together.</td><td>Jason and Catherine</td></tr>
+</tbody>
+</table>
+<h2 id="poster-session-plan">Poster Session Plan</h2>
+<p>We plan to show the core/IPC/queue architecture, an execution timeline, and graphs of makespan and speedup across policies and job granularity. We will distinguish fixed-clock gains from gains over the strongest sequential reference, show slowdowns as well as wins, and account for runtime memory. We may also do a small live board demonstration with selected tests, but measured evaluation is the primary deliverable.</p>
+</body>
+</html>

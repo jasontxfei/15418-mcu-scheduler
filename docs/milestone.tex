@@ -1,247 +1,177 @@
-\documentclass[11pt]{article}
-
+\documentclass[10pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{xcolor}
-\usepackage{tabularx}
-\usepackage{booktabs}
-\usepackage{float}
-\usepackage[
-    colorlinks=true,
-    urlcolor=blue,
-    linkcolor=blue,
-    citecolor=blue
-]{hyperref}
-
-\newcommand{\TODO}[1]{\textcolor{red}{\textbf{TODO:} #1}}
+\usepackage{lmodern}
+\usepackage{tabularx,booktabs,array}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=blue]{hyperref}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{0.6em}
-
+\setlength{\parskip}{0.35em}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.13}
+\hypersetup{pdftitle={Heterogeneous MCU Scheduler: Milestone Report},pdfauthor={Jason Tang and Catherine Li}}
 \title{Workload- and Memory-Aware Scheduler\\
-for Heterogeneous Embedded MCU Cores\\[0.5em]
-\large Milestone Report}
+for Heterogeneous Embedded MCU Cores\\[0.4em]\large Milestone Report}
 \author{Jason Tang (jasont2) \and Catherine Li (catheri5)}
 \date{November 23, 2026}
-
 \begin{document}
-\maketitle
-
-\noindent\textbf{Project URL:}
-\href{https://jasontxfei.github.io/15418-mcu-scheduler/}{https://jasontxfei.github.io/15418-mcu-scheduler/}
+\begin{center}
+{\Large Workload- and Memory-Aware Scheduler\\
+for Heterogeneous Embedded MCU Cores}\\[0.3em]
+{\large Milestone Report}\\[0.5em]
+Jason Tang (jasont2) \quad Catherine Li (catheri5)\\
+November 23, 2026
+\end{center}
+\textbf{Project URL:} \url{https://jasontxfei.github.io/15418-mcu-scheduler/}\\
+\textit{Progress and measurements current through November 23, 2026.}
 
 \section{Progress So Far}
-% The guidelines suggest one to two paragraphs summarizing completed work.
-\TODO{Summarize the work completed since the proposal. Distinguish
-implemented and verified components from work that is still in progress.}
+Since the proposal, we have brought up the dual-core PSoC 6, implemented
+integer FIR filtering with runtime-supplied coefficients, and profiled scalar
+and DSP/unrolled kernels. A FIR job filters an independent block with zero
+initial history; its tap count is the number of coefficients used per output.
+Infineon supplies startup, timer, and IPC (inter-processor communication) drivers. The filtering kernels,
+job ownership protocol, and batch execution are our own implementations.
 
-\TODO{Briefly describe the current state of the hardware setup, dual-core
-execution, runtime, workloads, and profiling, as applicable.}
+We first implemented and verified an FIR filtering kernel on each core and measured its execution time, then implemented a single-job cross-core handoff and a naive concurrent baseline. Both cores claim the next unclaimed job, release the hardware IPC lock, and execute separate filtering jobs concurrently.
+Full-output checks, completion counts, guards, and separate timing traces
+validate execution. The runtime supports up to 32 preloaded FIR jobs in
+16 KiB of shared storage. Threshold operations, general enqueueing,
+dependencies, profiled static assignment, and work stealing remain planned areas of exploration.
 
 \section{Status of Proposed Goals}
-% Compare progress with the goals and schedule in the original proposal.
-\begin{table}[H]
-\centering
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.5cm}YY@{}}
+\begin{center}
+\normalsize
+\begin{tabularx}{\linewidth}{@{}p{2.1cm}YY@{}}
 \toprule
-\textbf{Proposed goal} & \textbf{Current status} & \textbf{Remaining work} \\
-\midrule[0.8pt]
-Runtime & \TODO{Status.} & \TODO{Next steps.} \\
-\midrule[0.25pt]
-Profiling & \TODO{Status.} & \TODO{Next steps.} \\
-\midrule[0.25pt]
-Benchmarks & \TODO{Status.} & \TODO{Next steps.} \\
-\midrule[0.25pt]
-Evaluation & \TODO{Status.} & \TODO{Next steps.} \\
-\midrule[0.25pt]
-Analysis & \TODO{Status.} & \TODO{Next steps.} \\
+\textbf{Goal} & \textbf{Completed} & \textbf{Remaining} \\
+\midrule
+Runtime & Concurrent bounded FIR batches; shared ownership and completion. & General operation interface, profiled static, stealing, cost-aware policy, small DAG. \\
+Profiling & Scalar and optimized per-core FIR kernel execution costs, clock configurations, and IPC handoff latency measured. & Threshold costs, prediction error, and concurrent memory behavior. \\
+Benchmarks & 25 uniform, tiny, and mixed-size/tap FIR workloads. & Mixed operation types; controlled imbalance and dependencies. \\
+Evaluation & Established M4- and M0+-only measurements, full-output checks, job counts, overlap traces. & Policy comparisons, useful/idle time, and runtime memory accounting. \\
+Analysis & Naive placement can lose despite real core execution overlap. & Separate placement, synchronization, contention, and prediction effects. \\
 \bottomrule
 \end{tabularx}
-\caption{Progress against the deliverables in the proposal.}
-\label{tab:goal-status}
-\end{table}
+\end{center}
+We are behind the proposal's original scheduling-policy timeline: the initial
+Nov.\ 16--22 plan included weighted static assignment and dependencies, which
+are still unfinished. Hardware bring-up took longer than expected due to unexpected issues with the UART connection (see below). We now
+have a verified concurrent baseline and a clearer experimental target. The
+revised plan prioritizes the single-board policy comparison; two-board work
+and broad streaming/jitter experiments remain stretch goals.
 
-\TODO{State whether the original deliverables and schedule remain
-achievable. Explain any changes to scope or priorities, including the
-multi-board stretch goal.}
-
+\newpage
 \section{Updated Goals and Deliverables}
-% Give a revised list of goals to reach by the poster session.
-\subsection{Plan to Achieve}
-\TODO{List the concrete deliverables that remain the core goals of the
-project. Specify what will be implemented, validated, and measured.}
+\textbf{Plan to achieve.} Extend the existing runtime with threshold jobs and profile their per-core costs. Implement profiled static assignment, work stealing, and cost-aware scheduling. Compare these with established naive greedy and optimized M4-only execution on identical
+batches. Validate a small FIR-to-threshold dependency graph and report
+makespan, correctness, core utilization, scheduling cost, and memory use.
 
-\subsection{Hope to Achieve}
-\TODO{List any stretch goals that remain realistic, or state that stretch
-work has been deferred to prioritize the core deliverables.}
+\textbf{Hope to achieve.} Extend dependency shapes, test controlled cost-model
+errors or arrival jitter, and investigate batching. Two-board SPI/UART work
+remains a stretch goal only after the single-board evaluation is complete.
 
-\subsection{Fallback Goals}
-\TODO{Describe the reduced scope to prioritize if the remaining work takes
-longer than expected.}
+\textbf{Fallback.} Keep independent FIR/threshold jobs, fixed calibration,
+bounded storage, and the static-versus-dynamic comparison. Reduce graph and
+streaming scope before weakening correctness or experimental controls.
 
 \section{Preliminary Results}
-\subsection{M4 FIR Execution Times}
-We measured a single-channel integer FIR-filtering job on the Cortex-M4
-using generated input data and a free-running TCPWM counter. The M4 and
-timer clocks both ran at 100\,MHz, and the project build configuration
-was GCC\_ARM Debug (\texttt{-Og}). Each configuration was measured over
-three runs; the reported times were consistent across those runs, so we
-show only the median. Input generation, correctness checks, checksum
-calculation, and UART output were excluded from the timed interval.
-The M0+ continued its LED heartbeat and did not execute filtering jobs.
+\subsection{Experimental Setup}
+With Arm GCC 14.2.1 (\texttt{-O2}), we measure 31 trials per workload,
+mode, and clock setting after three warmups. Scalar and DSP/unrolled
+variants are tested on each core; choices are fixed before parallel trials.
+The assignment rule itself uses no cost estimates. A common on-board TCPWM
+counter measures elapsed time using its configured frequency. We evaluated two clock configurations: M4 at 150 MHz which required M0+ to be at 75 MHz, and both cores at 100 MHz.
 
-\begin{table}[H]
-\centering
-\begin{tabular}{@{}rrr@{}}
+The M4-only reference makes direct filter calls over the same shared buffers,
+without work queue locks or worker wakeup. Parallel timing includes ready-list
+initialization, publication, IPC wakeup, claiming, execution, and completion
+waiting. Input/plan preparation and correctness checks are outside both timers.
+Per-job timestamps are enabled only in separate diagnostic batches.
+
+\subsection{Initial Per-Core Assessment}
+At 100 MHz on both cores, we separately profiled eight 256-sample,
+eight-tap FIR jobs per trial. Values below are medians of summed FIR-call
+intervals, excluding dispatch and queue handling but retaining timer/barrier
+and call-selection overhead.
+\begin{center}
+\small
+\begin{tabular}{@{}lrr@{}}
 \toprule
-\textbf{Samples per job} & \textbf{Taps} & \textbf{Median time (ns)} \\
+\textbf{Core} & \textbf{Scalar ($\mu$s)} & \textbf{DSP/unrolled ($\mu$s)} \\
 \midrule
-64 & 8 & 67,730 \\
-128 & 8 & 138,130 \\
-256 & 8 & 279,090 \\
-512 & 8 & 560,690 \\
-1024 & 8 & 1,123,890 \\
+M4 & 1442.56 & 606.16 \\
+M0+ & 2469.75 & 1740.61 \\
 \bottomrule
 \end{tabular}
-\caption{M4 execution time with varying sample counts and eight filter taps.}
-\label{tab:m4-fir-samples}
-\end{table}
+\end{center}
+M4 uses DSP instructions (\texttt{SMLADX}); M0+ uses portable unrolling. Optimized M0+ execution took about $2.87\times$ as long as the M4, motivating per-core cost estimates.
 
-\begin{table}[H]
-\centering
-\begin{tabular}{@{}rrr@{}}
+\subsection{Naive Greedy Versus Optimized Sequential Execution}
+\begin{minipage}{\linewidth}
+\begin{center}
+\small
+\begin{tabular}{@{}p{3.7cm}rrrr@{}}
 \toprule
-\textbf{Samples per job} & \textbf{Taps} & \textbf{Median time (ns)} \\
+\textbf{Jobs $\times$ samples} & \textbf{Taps} & \textbf{M4-only} & \textbf{Greedy} & \textbf{Speedup} \\
 \midrule
-256 & 4 & 158,730 \\
-256 & 8 & 279,090 \\
-256 & 16 & 514,050 \\
-256 & 32 & 960,930 \\
+$32\times64$ & 8 & 436.51 & 497.63 & $0.88\times$ \\
+$8\times256$ & 8 & 403.71 & 611.07 & $0.66\times$ \\
+$2\times1024$ & 8 & 395.51 & 1171.04 & $0.34\times$ \\
+$32\times1$ & 8 & 17.12 & 52.61 & $0.33\times$ \\
+32 mixed-size jobs & 8 & 411.97 & 417.76 & $0.99\times$ \\
+32 mixed-size jobs & 32 & 1405.89 & 1274.81 & $1.10\times$ \\
+32 mixed-size jobs & Mixed & 508.56 & 566.93 & $0.90\times$ \\
 \bottomrule
 \end{tabular}
-\caption{M4 execution time with varying tap counts and 256 samples per job.}
-\label{tab:m4-fir-taps}
-\end{table}
+\end{center}
+{\small\textit{Representative whole-batch medians in microseconds: M4-only at
+150 MHz versus greedy with M4 at 150 MHz and M0+ at 75 MHz. $Speedup = \frac{\mbox{sequential (M4-only) time}}{\mbox{parallel (greedy) time}}$. Mixed-size cases repeat
+16/32/64/128 samples; the final row also varies taps.}}
+\end{minipage}
 
-At eight taps, doubling the sample count approximately doubled execution
-time (Table~\ref{tab:m4-fir-samples}). With 256 samples, increasing the tap
-count from four to 32 increased execution time by approximately
-$6.05\times$ (Table~\ref{tab:m4-fir-taps}). This is consistent with increasing
-filtering work alongside fixed per-sample overhead and fewer active taps
-near the zero-padded beginning of each block. These measurements establish
-initial job costs for varying granularity and computation per output.
-Dispatch-overhead measurements will be needed to determine when job
-redistribution justifies its cost.
+Across 25 workloads, the 150-MHz M4 and 75-MHz M0+ configuration of the greedy scheduler beat the fastest tested M4-only configuration (150 MHz) in only
+2 cases, with a best median speedup of approximately $1.10\times$. With both cores at 100 MHz, it beat M4-only at 100 MHz in 19 cases. Separate traces confirmed
+kernel overlap in all 50 traced batches. Across both accepted clock sweeps,
+8560 batches and 139,668 job executions passed checks, including warmups and
+calibration. The earlier single-slot NOOP handoff measured about 5.88\,$\mu$s
+round trip at 150/75 MHz.
 
-\subsection{M0+ FIR Execution Times}
-We repeated the same FIR configurations on the Cortex-M0+, with the M0+
-and TCPWM clocks both at 100\,MHz and the same GCC\_ARM Debug
-(\texttt{-Og}) build configuration. Each result is the median of three
-runs, which again produced consistent reported times. The M4 ran only its
-LED heartbeat, and results were inspected through the M0+ debugger after
-the measured interval. Input generation, correctness checks, checksum
-calculation, and time conversion remained outside the timed filter call.
-
-\begin{table}[H]
-\centering
-\begin{tabular}{@{}rrr@{}}
-\toprule
-\textbf{Samples per job} & \textbf{Taps} & \textbf{Median time (ns)} \\
-\midrule
-64 & 8 & 83,580 \\
-128 & 8 & 170,620 \\
-256 & 8 & 344,840 \\
-512 & 8 & 692,980 \\
-1024 & 8 & 1,389,300 \\
-\bottomrule
-\end{tabular}
-\caption{M0+ execution time with varying sample counts and eight filter taps.}
-\label{tab:m0p-fir-samples}
-\end{table}
-
-\begin{table}[H]
-\centering
-\begin{tabular}{@{}rrr@{}}
-\toprule
-\textbf{Samples per job} & \textbf{Taps} & \textbf{Median time (ns)} \\
-\midrule
-256 & 4 & 194,410 \\
-256 & 8 & 344,840 \\
-256 & 16 & 638,550 \\
-256 & 32 & 1,197,050 \\
-\bottomrule
-\end{tabular}
-\caption{M0+ execution time with varying tap counts and 256 samples per job.}
-\label{tab:m0p-fir-taps}
-\end{table}
-
-The M0+ showed similar scaling trends but took approximately 22--25\%
-longer than the M4 across these configurations. For example, the
-256-sample, eight-tap job took 344,840\,ns on M0+ versus 279,090\,ns on M4
-(approximately 24\% longer). The measured difference at equal clock
-frequencies motivates using per-core execution-cost estimates rather than
-assuming equal processing rates when distributing jobs.
-
+\newpage
 \section{Challenges and Remaining Unknowns}
-We initially chose the PSoC 6 because of prior familiarity and its
-heterogeneous multicore architecture, which fit our project requirements.
-Despite this, we encountered unexpected issues with the hardware. In the basic Hello World demo to first test our board, we encountered corrupted or missing UART output, which would later become a problem in attempting to establish a debugging interface (which would be through UART with the computer's serial terminal). We checked serial settings and verified firmware execution in the debugger, then used a TX/RX loopback test to confirm that the computer-to-KitProg serial bridge worked. With directed jumper tests, we were able to figure out that the problem lay in the onboard connection between the debugger and the PSoC itself, and we eventually found a workaround solution by bypassing the TX/RX paths using jumper wires, restoring the expected output and behavior upon input. Regardless, establishing a
-working hardware baseline took longer than expected and delayed actual
-scheduler development.
+Initial bring-up required hardware UART-path diagnosis and a TX/RX jumper cable workaround, intended to ease debugging later on; this unforeseen issue led to delays. The measurements included in this report use
+KitProg debugger extraction rather than prints after execution, so timing does not depend on serial output. Earlier large-block tests also required increasing M0+'s private SRAM allocation from 12 to 16 KiB and updating both linkers.
 
-Testing 1024 samples on M0+ also exposed a linker RAM-allocation limit:
-its 12\,KB region could not accommodate the 6\,KB input/output buffers
-alongside firmware data, heap, and stack. We increased M0+'s allocation to
-16\,KB, taking 4\,KB from M4 and updating both linker scripts to keep their
-regions separate. This resolved the build failure and allowed the larger
-benchmark configuration to run.
-
-\TODO{List the remaining technical or resource uncertainties and how you
-plan to address them. Identify any questions to discuss with course staff.}
+The current shared batch occupies 15,684 bytes, including sample buffers,
+coefficient plans, and test guards; this is not all scheduler overhead.
+General buffers and dependency lifetimes/safe reuse still need to be carefully designed. We also
+need to distinguish queue/wake costs, differences in core processing speeds, and contention for shared-memory bandwidth. Current representative traces show M4 finishing and waiting while a longer M0+ job remains executing.
+The results do not yet isolate every cause of slowdown, so we will test whether assigning jobs based on core-specific execution costs improves overall completion time.
 
 \section{Updated Schedule}
-% Also update the schedule on the main project webpage.
-% The guidelines suggest half-week increments and a named owner for each task.
-% Replace each owner placeholder with Jason, Catherine, or both, as appropriate.
-\begin{table}[H]
-\centering
-\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{2.7cm}Y>{\raggedright\arraybackslash}p{2.4cm}@{}}
+All remaining tasks are shared by Jason Tang and Catherine Li.
+\begin{center}
+\normalsize
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{1.8cm}Y>{\raggedright\arraybackslash}p{2.4cm}@{}}
 \toprule
-\textbf{Date} & \textbf{Task / deliverable} & \textbf{Owner} \\
-\midrule[0.8pt]
-Nov.\ 23--25 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
-\midrule[0.25pt]
-Nov.\ 26--29 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
-\midrule[0.25pt]
-Nov.\ 30--Dec.\ 2 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
-\midrule[0.25pt]
-Dec.\ 3--6 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
-\midrule[0.25pt]
-Dec.\ 7--9 & \TODO{Tasks and completion criteria.} & \TODO{Name.} \\
-\midrule[0.25pt]
-Dec.\ 10 & \TODO{Final tasks; final report due at 11:59 p.m.} & \TODO{Name.} \\
-\midrule[0.25pt]
-Dec.\ 11 & \TODO{Poster-session preparation and presentation.} & \TODO{Name.} \\
+\textbf{Date} & \textbf{Task / deliverable} & \textbf{Owners} \\
+\midrule
+Nov. 23--25 & Generalize operation descriptors; implement and verify threshold; profile both operations on each core. & Jason and Catherine \\
+Nov. 26--29 & Implement profiled greedy static assignment; build mixed-job batches; validate predictions and outputs. & Jason and Catherine \\
+Nov.~30--\newline Dec.~2 & Implement work stealing and bounded ready queues; exercise imbalance and varying sizes; compare static and stealing. & Jason and Catherine \\
+Dec. 3--6 & Add cost-aware decisions and a small FIR-to-threshold graph; measure makespan, idle time, scheduling cost, and memory. & Jason and Catherine \\
+Dec. 7--9 & Freeze features and fix correctness issues; complete repeated experiments and figures; draft report/poster. & Jason and Catherine \\
+Dec. 10 & Review final claims, figures, and reproducibility; submit the final report by 11:59 p.m. & Jason and Catherine \\
+Dec. 11 & Prepare the board, architecture explanation, and result figures; present the project together. & Jason and Catherine \\
 \bottomrule
 \end{tabularx}
-\caption{Revised plan for the remaining project work.}
-\label{tab:schedule}
-\end{table}
+\end{center}
 
 \section{Poster Session Plan}
-\TODO{Describe what you expect to present: performance graphs, an
-architecture diagram, a live demonstration, or other project artifacts.
-Explain what each planned artifact will show.}
-
-% Add references here if the milestone report cites any sources.
-% \begin{thebibliography}{9}
-% \bibitem{reference-key} Author. Title. URL.
-% \end{thebibliography}
-
-% Submission checklist (not part of the report):
-% - Update the schedule on the main project webpage.
-% - Meet with course staff to discuss progress.
-% - Post the milestone report on the project webpage.
-% - Upload the full PDF to Gradescope by November 23, 2026, 11:59 p.m.
+We plan to show the core/IPC/queue architecture, an execution timeline,
+and graphs of makespan and speedup across policies and job granularity.
+We will distinguish fixed-clock gains from gains over the strongest
+sequential reference, show slowdowns as well as wins, and account for
+runtime memory. We may also do a small live board demonstration with selected tests, but measured evaluation is the primary deliverable.
 
 \end{document}

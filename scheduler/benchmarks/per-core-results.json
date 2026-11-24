@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-23",
+  "board": "CY8CPROTO-063-BLE / CYBLE-416045-02",
+  "board_configuration": "Catherine's board with the UART TX/RX jumper workaround; no serial output in timed intervals",
+  "compiler": "Arm GCC 14.2.1, -O2",
+  "clocks_hz": {
+    "m4": 100000000,
+    "m0_plus": 100000000,
+    "tcpwm": 100000000
+  },
+  "scope": "Initial per-core FIR characterization; one core filters at a time; not parallel speedup measurements",
+  "provenance": {
+    "source": "Successful terminal output pasted by Catherine in the project chat on 2026-11-23",
+    "collector": "/private/tmp/mcu-kernel-profile/collect.py",
+    "base_commit": "793e1e6547612dac938659742c5b43c312e65c68",
+    "diagnostic_controller_sha256": "8cc7342bfd9ffec08e3f00e2bce143e08e243fa03c12fabc967ce8696400bb23",
+    "diagnostic_controller_patch": "--- a/scheduler/proj_cm4/greedy_benchmark.c\n+++ b/scheduler/proj_cm4/greedy_benchmark.c\n@@ -32,6 +32,9 @@\n volatile uint32_t gbench_trace_words=sizeof(greedy_trace_t)/4U;\n volatile uint32_t gbench_records=0U, gbench_traces=0U, gbench_verified_batches=0U;\n volatile uint32_t gbench_verified_jobs=0U, gbench_overlap_cases=0U, gbench_prechecks=0U;\n+/* Diagnostic only: sum of per-job FIR-call intervals, excluding dispatch,\n+ * ownership, validation, completion, and queue bookkeeping. */\n+volatile uint32_t gbench_kernel_ticks[CASES][4U][TRIALS];\n volatile greedy_result_t gbench_results[CASES][MODES];\n volatile greedy_trace_t gbench_trace[CASES];\n static int32_t expected[BATCH_OUTPUT_SAMPLES];\n@@ -196,13 +199,23 @@\n          * state bookkeeping, timestamps, wakeup or completion polling. */\n         for (uint32_t j=0U;j<greedy_shared.job_count;++j)\n         {\n-            const batch_job_t *job=&greedy_shared.jobs[j];\n+            batch_job_t *job=&greedy_shared.jobs[j];\n+            if (trace!=0U)\n+            {\n+                __DSB();\n+                job->start_tick=Cy_TCPWM_Counter_GetCounter(TCPWM0,0U);\n+            }\n             if (kernel4==0U)\n                 fir_filter_scalar(&job->plan,greedy_shared.input+job->input_offset,\n                                    greedy_shared.output+job->output_offset,job->samples);\n             else\n                 fir_filter_dsp(&job->plan,greedy_shared.input+job->input_offset,\n                                 greedy_shared.output+job->output_offset,job->samples);\n+            if (trace!=0U)\n+            {\n+                __DSB();\n+                job->end_tick=Cy_TCPWM_Counter_GetCounter(TCPWM0,0U);\n+            }\n         }\n     }\n     else\n@@ -335,10 +348,18 @@\n             result->m4_kernel=k4; result->m0_kernel=k0; result->trials=TRIALS;\n             for (uint32_t trial=0U;trial<TRIALS+3U;++trial)\n             {\n-                if (!run_batch(mode,k4,k0,0U) || !verify()) return false;\n+                if (!run_batch(mode,k4,k0,mode<4U?1U:0U) || !verify()) return false;\n                 if (trial>=3U)\n                 {\n                     const uint32_t index=trial-3U;\n+                    if (mode<4U)\n+                    {\n+                        uint32_t kernel_ticks=0U;\n+                        for (uint32_t j=0U;j<greedy_shared.job_count;++j)\n+                            kernel_ticks += greedy_shared.jobs[j].end_tick-\n+                                            greedy_shared.jobs[j].start_tick;\n+                        gbench_kernel_ticks[id][mode][index]=kernel_ticks;\n+                    }\n                     result->ticks[index]=batch_elapsed;\n                     result->m4_jobs[index]=greedy_shared.completed[0];\n                     result->m0_jobs[index]=greedy_shared.completed[1];\n",
+    "raw_trial_samples_retained": false,
+    "summary_precision_us": 0.001,
+    "note": "Original collection intentionally printed results without retaining measurement files. These summaries are transcribed from that output; individual trial arrays are not reconstructed."
+  },
+  "kernel_call_profile": {
+    "jobs": 8,
+    "samples_per_job": 256,
+    "taps": 8,
+    "warmup_trials": 3,
+    "timed_trials": 31,
+    "measurement": "For each trial, sum of eight individually timed FIR-call intervals; statistics are over those 31 sums",
+    "excluded": [
+      "Input and coefficient preparation",
+      "IPC wakeup and dispatch",
+      "Job validation and queue/ownership bookkeeping",
+      "Completion bookkeeping",
+      "Output correctness checks"
+    ],
+    "included": [
+      "FIR computation",
+      "Kernel selection and argument evaluation within each timing bracket",
+      "Timer-read and barrier instrumentation; no overhead subtraction"
+    ],
+    "other_core_activity": "No concurrent FIR work; M4 prepares and waits for completion during M0+ profiles",
+    "validation": "Collector reported PASS after full-output, guard, ownership and completion checks",
+    "measurements": [
+      {
+        "core": "M4",
+        "kernel": "scalar",
+        "summed_fir_call_us_median": 1442.56,
+        "summed_fir_call_us_min": 1442.56,
+        "summed_fir_call_us_max": 1442.56
+      },
+      {
+        "core": "M4",
+        "kernel": "dsp",
+        "summed_fir_call_us_median": 606.16,
+        "summed_fir_call_us_min": 606.16,
+        "summed_fir_call_us_max": 606.16
+      },
+      {
+        "core": "M0+",
+        "kernel": "scalar",
+        "summed_fir_call_us_median": 2469.75,
+        "summed_fir_call_us_min": 2469.75,
+        "summed_fir_call_us_max": 2469.75
+      },
+      {
+        "core": "M0+",
+        "kernel": "unrolled",
+        "summed_fir_call_us_median": 1740.61,
+        "summed_fir_call_us_min": 1740.61,
+        "summed_fir_call_us_max": 1740.61
+      }
+    ],
+    "optimized_m0_to_m4_time_ratio": 2.871536
+  },
+  "m4_repeat": {
+    "measurement": "Original uninstrumented M4-only direct-call whole-batch elapsed time; distinct from summed per-call profiles above",
+    "warmup_trials": 3,
+    "timed_trials": 31,
+    "reference": "greedy-results.json, 100 MHz run, matching kernel and workload",
+    "matched_cases_at_reported_precision": 25,
+    "note": "All 25 reported medians matched. This establishes repeatability for this benchmark and does not establish identical hardware behavior for every workload.",
+    "measurements": [
+      {
+        "case_id": 0,
+        "jobs": 32,
+        "samples_per_job": 64,
+        "taps": 4,
+        "kernel": "dsp",
+        "partner_batch_us_median": 418.86,
+        "this_board_batch_us_median": 418.86,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 1,
+        "jobs": 32,
+        "samples_per_job": 64,
+        "taps": 8,
+        "kernel": "dsp",
+        "partner_batch_us_median": 654.7,
+        "this_board_batch_us_median": 654.7,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 2,
+        "jobs": 32,
+        "samples_per_job": 64,
+        "taps": 16,
+        "kernel": "dsp",
+        "partner_batch_us_median": 1168.62,
+        "this_board_batch_us_median": 1168.62,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 3,
+        "jobs": 32,
+        "samples_per_job": 64,
+        "taps": 32,
+        "kernel": "dsp",
+        "partner_batch_us_median": 2365.42,
+        "this_board_batch_us_median": 2365.42,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 4,
+        "jobs": 16,
+        "samples_per_job": 128,
+        "taps": 4,
+        "kernel": "dsp",
+        "partner_batch_us_median": 396.46,
+        "this_board_batch_us_median": 396.46,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 5,
+        "jobs": 16,
+        "samples_per_job": 128,
+        "taps": 8,
+        "kernel": "dsp",
+        "partner_batch_us_median": 621.9,
+        "this_board_batch_us_median": 621.9,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 6,
+        "jobs": 16,
+        "samples_per_job": 128,
+        "taps": 16,
+        "kernel": "dsp",
+        "partner_batch_us_median": 1093.9,
+        "this_board_batch_us_median": 1093.9,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 7,
+        "jobs": 16,
+        "samples_per_job": 128,
+        "taps": 32,
+        "kernel": "dsp",
+        "partner_batch_us_median": 2122.38,
+        "this_board_batch_us_median": 2122.38,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 8,
+        "jobs": 8,
+        "samples_per_job": 256,
+        "taps": 4,
+        "kernel": "dsp",
+        "partner_batch_us_median": 385.26,
+        "this_board_batch_us_median": 385.26,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 9,
+        "jobs": 8,
+        "samples_per_job": 256,
+        "taps": 8,
+        "kernel": "dsp",
+        "partner_batch_us_median": 605.5,
+        "this_board_batch_us_median": 605.5,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 10,
+        "jobs": 8,
+        "samples_per_job": 256,
+        "taps": 16,
+        "kernel": "dsp",
+        "partner_batch_us_median": 1056.54,
+        "this_board_batch_us_median": 1056.54,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 11,
+        "jobs": 8,
+        "samples_per_job": 256,
+        "taps": 32,
+        "kernel": "dsp",
+        "partner_batch_us_median": 2000.86,
+        "this_board_batch_us_median": 2000.86,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 12,
+        "jobs": 4,
+        "samples_per_job": 512,
+        "taps": 4,
+        "kernel": "dsp",
+        "partner_batch_us_median": 379.66,
+        "this_board_batch_us_median": 379.66,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 13,
+        "jobs": 4,
+        "samples_per_job": 512,
+        "taps": 8,
+        "kernel": "dsp",
+        "partner_batch_us_median": 597.3,
+        "this_board_batch_us_median": 597.3,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 14,
+        "jobs": 4,
+        "samples_per_job": 512,
+        "taps": 16,
+        "kernel": "dsp",
+        "partner_batch_us_median": 1037.86,
+        "this_board_batch_us_median": 1037.86,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 15,
+        "jobs": 4,
+        "samples_per_job": 512,
+        "taps": 32,
+        "kernel": "dsp",
+        "partner_batch_us_median": 1940.1,
+        "this_board_batch_us_median": 1940.1,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 16,
+        "jobs": 2,
+        "samples_per_job": 1024,
+        "taps": 4,
+        "kernel": "dsp",
+        "partner_batch_us_median": 376.86,
+        "this_board_batch_us_median": 376.86,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 17,
+        "jobs": 2,
+        "samples_per_job": 1024,
+        "taps": 8,
+        "kernel": "dsp",
+        "partner_batch_us_median": 593.2,
+        "this_board_batch_us_median": 593.2,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 18,
+        "jobs": 2,
+        "samples_per_job": 1024,
+        "taps": 16,
+        "kernel": "dsp",
+        "partner_batch_us_median": 1028.52,
+        "this_board_batch_us_median": 1028.52,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 19,
+        "jobs": 2,
+        "samples_per_job": 1024,
+        "taps": 32,
+        "kernel": "dsp",
+        "partner_batch_us_median": 1909.72,
+        "this_board_batch_us_median": 1909.72,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 20,
+        "jobs": 32,
+        "samples_per_job": 1,
+        "taps": 8,
+        "kernel": "scalar",
+        "partner_batch_us_median": 25.62,
+        "this_board_batch_us_median": 25.62,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 21,
+        "jobs": 32,
+        "samples_per_job": 16,
+        "taps": 8,
+        "kernel": "dsp",
+        "partner_batch_us_median": 213.1,
+        "this_board_batch_us_median": 213.1,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 22,
+        "jobs": 32,
+        "samples_per_job": null,
+        "taps": 8,
+        "kernel": "dsp",
+        "partner_batch_us_median": 617.9,
+        "this_board_batch_us_median": 617.9,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 23,
+        "jobs": 32,
+        "samples_per_job": null,
+        "taps": 32,
+        "kernel": "dsp",
+        "partner_batch_us_median": 2108.78,
+        "this_board_batch_us_median": 2108.78,
+        "change_percent": 0.0
+      },
+      {
+        "case_id": 24,
+        "jobs": 32,
+        "samples_per_job": null,
+        "taps": null,
+        "kernel": "dsp",
+        "partner_batch_us_median": 762.78,
+        "this_board_batch_us_median": 762.78,
+        "change_percent": 0.0
+      }
+    ]
+  }
+}
