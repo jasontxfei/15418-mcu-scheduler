@@ -139,6 +139,15 @@ straggler on M0+; mixed sizes can change that balance. The traces and job
 counts help explain specific cases, but they do not isolate every cause or
 prove that one later policy will win.
 
+Separate [initial per-core summaries](benchmarks/per-core-results.json) record
+FIR-call profiles on each core at 100 MHz and an uninstrumented M4 repeat on
+Catherine's UART-jumpered board. The profiles exclude dispatch and queue handling
+but retain timer/barrier and call-selection overhead; they sum eight individual
+256-sample, eight-tap calls. Optimized M0+ time was about 2.87 times M4 time.
+All 25 M4 repeat medians matched the saved 100 MHz reference at reported precision.
+Only the terminal-reported summaries were retained, not individual trial samples.
+These diagnostic results do not replace the whole-batch speedup measurements below.
+
 Captured trials, kernel choices, job counts, traces, and cross-clock comparisons
 are in [benchmarks/greedy-results.json](benchmarks/greedy-results.json).
 The compact table is also available as [benchmarks/greedy-summary.csv](benchmarks/greedy-summary.csv).

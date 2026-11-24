@@ -15,7 +15,7 @@
     <li>Final report: forthcoming</li>
   </ul>
   <p><a href="https://github.com/jasontxfei/15418-mcu-scheduler">GitHub repository</a></p>
-  <h2>Completed through November 22</h2>
+  <h2>Completed through November 23</h2>
   <ul>
     <li>Dual-core board bring-up, general FIR kernels, and optimized per-core measurements.</li>
     <li>Verified shared-memory IPC handoff and bounded concurrent FIR batches with naive greedy assignment.</li>
@@ -26,18 +26,19 @@
   <h2>Revised schedule</h2>
   <p>All remaining tasks are shared by Jason Tang and Catherine Li.</p>
   <table>
-    <thead><tr><th scope="col">Date</th><th scope="col">Task / deliverable</th><th scope="col">Owners</th></tr></thead>
-    <tbody>
-    <tr><td>Nov. 23</td><td>Finalize and review the report and project site; discuss progress with staff and submit the full PDF.</td><td>Jason and Catherine</td></tr>
-    <tr><td>Nov. 23–25</td><td>Generalize operation descriptors; implement and verify threshold; profile both operations on each core.</td><td>Jason and Catherine</td></tr>
-    <tr><td>Nov. 26–29</td><td>Implement profiled greedy static assignment; build mixed-job batches; validate predictions and outputs.</td><td>Jason and Catherine</td></tr>
-    <tr><td>Nov. 30–Dec. 2</td><td>Implement work stealing and bounded ready queues; exercise imbalance and varying sizes; compare static and stealing.</td><td>Jason and Catherine</td></tr>
-    <tr><td>Dec. 3–6</td><td>Add cost-aware decisions and a small FIR-to-threshold graph; measure makespan, idle time, scheduling cost, and memory.</td><td>Jason and Catherine</td></tr>
-    <tr><td>Dec. 7–9</td><td>Freeze features and fix correctness issues; complete repeated experiments and figures; draft report/poster.</td><td>Jason and Catherine</td></tr>
-    <tr><td>Dec. 10</td><td>Review final claims, figures, and reproducibility; submit the final report by 11:59 p.m.</td><td>Jason and Catherine</td></tr>
-    <tr><td>Dec. 11</td><td>Prepare the board, architecture explanation, and result figures; present the project together.</td><td>Jason and Catherine</td></tr>
-    </tbody>
-  </table>
+<thead>
+<tr><th scope="col"><strong>Date</strong></th><th scope="col"><strong>Task / deliverable</strong></th><th scope="col"><strong>Owners</strong></th></tr>
+</thead>
+<tbody>
+<tr><td>Nov. 23–25</td><td>Generalize operation descriptors; implement and verify threshold; profile both operations on each core.</td><td>Jason and Catherine</td></tr>
+<tr><td>Nov. 26–29</td><td>Implement profiled greedy static assignment; build mixed-job batches; validate predictions and outputs.</td><td>Jason and Catherine</td></tr>
+<tr><td>Nov.&nbsp;30–<br> Dec.&nbsp;2</td><td>Implement work stealing and bounded ready queues; exercise imbalance and varying sizes; compare static and stealing.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 3–6</td><td>Add cost-aware decisions and a small FIR-to-threshold graph; measure makespan, idle time, scheduling cost, and memory.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 7–9</td><td>Freeze features and fix correctness issues; complete repeated experiments and figures; draft report/poster.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 10</td><td>Review final claims, figures, and reproducibility; submit the final report by 11:59 p.m.</td><td>Jason and Catherine</td></tr>
+<tr><td>Dec. 11</td><td>Prepare the board, architecture explanation, and result figures; present the project together.</td><td>Jason and Catherine</td></tr>
+</tbody>
+</table>
   <p>Stretch work: investigate broader dependency graphs, arrival jitter, and batching after the core single-board evaluation. Two-board SPI/UART work is deferred unless the main deliverables are complete.</p>
   <h2>Key deadlines</h2>
   <ul>

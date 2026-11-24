@@ -20,6 +20,8 @@ cost-aware scheduling, and dependency graphs.
 
 - [Sequential FIR reference](scheduler/BENCHMARK.md): operation semantics,
   strongest tested M4 baseline, and reproduction.
+- [Initial per-core results](scheduler/benchmarks/per-core-results.json): separate
+  FIR-call timings on M4/M0+ and the M4 board-repeat comparison.
 - [Cross-core dispatch](scheduler/DISPATCH.md): ownership, memory layout,
   interrupt wakeup, correctness checks, and handoff timing.
 - [Naive greedy baseline](scheduler/GREEDY.md): simultaneous work on both cores,
